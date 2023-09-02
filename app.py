@@ -1,4 +1,5 @@
 from kivymd.app import MDApp
+from kivy.graphics.svg import svg
 from kivy.lang.builder import Builder
 from kivymd.uix.screen import MDScreen
 from kivymd.uix.gridlayout import MDGridLayout
@@ -24,6 +25,9 @@ class ChessBoard(MDGridLayout):
             row = math.floor((i-1)/8) + 1
             color = get_color_from_hex(board_prim) if (i%2==0 if row%2==0 else i%2==1) else get_color_from_hex(board_sec)
             self.add_widget(ChessBoardSquare(text=str(i),background_color = color, color = [1,1,1,0]))
+    
+    def update_board(self):
+        pass
 
 class ChessBoardSquare(Button):
     pass
