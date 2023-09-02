@@ -1,0 +1,14 @@
+#:kivy 1.1.1
+#:import hex kivy.utils.get_color_from_hex
+
+#:set board_prim "#795C34"
+#:set board_sec "#E4D9CA"
+<MainScreen>:
+    MDBoxLayout:
+        ChessBoard:
+
+<ChessBoard>:
+    size_hint_y: 0.8
+    pos_hint: {'center-x':0.5,'center-y':0.5}
+
+MainScreen:
