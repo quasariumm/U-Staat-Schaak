@@ -21,18 +21,12 @@ class ChessBoard(MDGridLayout):
         self.cols = 8
         self.orientation = 'lr-bt'
         for i in range(1,65):
-            row = math.floor(i/8) + 1
-            square = Button(
-                background_color = 
-                    get_color_from_hex(board_prim) 
-                    if (i%2==0 if row%2==0 else i%2==1) else 
-                    get_color_from_hex(board_sec),
-                background_down = '',
-                background_normal = '' # Attribute in which the piece image is inserted
-            )
-            board.append(square)
-            self.add_widget(square, index=i-1)
-        print(len(self.children))
+            row = math.floor((i-1)/8) + 1
+            color = get_color_from_hex(board_prim) if (i%2==0 if row%2==0 else i%2==1) else get_color_from_hex(board_sec)
+            self.add_widget(ChessBoardSquare(text=str(i),background_color = color, color = [1,1,1,0]))
+
+class ChessBoardSquare(Button):
+    pass
 
 class ChessApp(MDApp):
     def __init__(self, **kwargs):
