@@ -1,5 +1,6 @@
 #:kivy 1.1.1
 #:import hex kivy.utils.get_color_from_hex
+#:import Svg kivy.graphics.svg.Svg
 
 #:set board_prim "#795C34"
 #:set board_sec "#E4D9CA"
@@ -10,11 +11,12 @@
         ChessBoard:
 
 <ChessBoardSquare>:
-    background_normal: "./Basisindeling.png"
-    background_down: "./Basisindeling.png"
+    background_normal: ""
+    background_down: ""
 
 <ChessBoard>:
-    size_hint_y: 0.8
-    pos_hint: {'center-x':0.5,'center-y':0.5}
+    height: 0.8 * self.parent.parent.height
+    width: self.height
+    size_hint: None, None
 
 MainScreen:

@@ -1,16 +1,32 @@
 from kivymd.app import MDApp
-from kivy.graphics.svg import svg
 from kivy.lang.builder import Builder
+from kivy.graphics.svg import Svg
 from kivymd.uix.screen import MDScreen
 from kivymd.uix.gridlayout import MDGridLayout
 from kivy.uix.button import Button
 from kivy.utils import get_color_from_hex
 import os, math, time
+import cv2
+
+from pieces import White as w
+from pieces import Black as b
 
 board_prim = "#795C34"
 board_sec = "#E4D9CA"
 
-board = []
+board = [None] * 64
+
+# PiecesLayout format: [a1, a2, ..., h7, h8]
+piecesLayout = [
+    w.Rook(), w.Knight(), w.Bishop(), w.Queen(), w.King(), w.Bishop(), w.Knight(), w.Rook(),
+    w.Pawn(), w.Pawn(), w.Pawn(), w.Pawn(), w.Pawn(), w.Pawn(), w.Pawn(), w.Pawn(),
+    None, None, None, None, None, None, None, None,
+    None, None, None, None, None, None, None, None,
+    None, None, None, None, None, None, None, None, 
+    None, None, None, None, None, None, None, None,
+    b.Pawn(), b.Pawn(), b.Pawn(), b.Pawn(), b.Pawn(), b.Pawn(), b.Pawn(), b.Pawn(),
+    b.Rook(), b.Knight(), b.Bishop(), b.Queen(), b.King(), b.Bishop(), b.Knight(), b.Rook(),
+]
 
 class MainScreen(MDScreen):
     pass
@@ -25,9 +41,18 @@ class ChessBoard(MDGridLayout):
             row = math.floor((i-1)/8) + 1
             color = get_color_from_hex(board_prim) if (i%2==0 if row%2==0 else i%2==1) else get_color_from_hex(board_sec)
             self.add_widget(ChessBoardSquare(text=str(i),background_color = color, color = [1,1,1,0]))
+        
+        for el in self.children:
+            board[int(el.text)-1] = el
     
     def update_board(self):
-        pass
+        for i,piece in enumerate(piecesLayout):
+            if piece:
+                with board[i].canvas:
+                    Svg(piece.imgPath)
+            else:
+                board[i].background_normal = ""
+                board[i].background_down = ""
 
 class ChessBoardSquare(Button):
     pass
@@ -41,6 +66,10 @@ class ChessApp(MDApp):
         self.theme_cls.theme_style = 'Dark'
 
         return Builder.load_file(os.path.dirname(__file__) + '\\app.kv')
+
+    def on_start(self):
+        ChessBoard.update_board(ChessBoard)
+        return super().on_start()
         
 
 if __name__ == "__main__":
