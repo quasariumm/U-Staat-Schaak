@@ -1,9 +1,12 @@
 from kivymd.app import MDApp
 from kivy.lang.builder import Builder
-from kivy.graphics.svg import Svg
+from kivy.graphics import *
 from kivymd.uix.screen import MDScreen
 from kivymd.uix.gridlayout import MDGridLayout
-from kivy.uix.button import Button
+from kivymd.uix.boxlayout import MDBoxLayout
+from kivy.uix.image import Image
+from kivy.uix.button import Button, ButtonBehavior
+from kivy.uix.label import Label
 from kivy.utils import get_color_from_hex
 import os, math, time
 import cv2
@@ -25,7 +28,7 @@ piecesLayout = [
     None, None, None, None, None, None, None, None, 
     None, None, None, None, None, None, None, None,
     b.Pawn(), b.Pawn(), b.Pawn(), b.Pawn(), b.Pawn(), b.Pawn(), b.Pawn(), b.Pawn(),
-    b.Rook(), b.Knight(), b.Bishop(), b.Queen(), b.King(), b.Bishop(), b.Knight(), b.Rook(),
+    b.Rook(), b.Knight(), b.Bishop(), b.Queen(), b.King(), b.Bishop(), b.Knight(), b.Rook()
 ]
 
 class MainScreen(MDScreen):
@@ -40,7 +43,8 @@ class ChessBoard(MDGridLayout):
         for i in range(1,65):
             row = math.floor((i-1)/8) + 1
             color = get_color_from_hex(board_prim) if (i%2==0 if row%2==0 else i%2==1) else get_color_from_hex(board_sec)
-            self.add_widget(ChessBoardSquare(text=str(i),background_color = color, color = [1,1,1,0]))
+            cbs = ChessBoardSquare(text=str(i),background_color = color, color = [1,1,1,0])
+            self.add_widget(cbs)
         
         for el in self.children:
             board[int(el.text)-1] = el
@@ -48,11 +52,9 @@ class ChessBoard(MDGridLayout):
     def update_board(self):
         for i,piece in enumerate(piecesLayout):
             if piece:
-                with board[i].canvas:
-                    Svg(piece.imgPath)
+                board[i].image.source = piece.imgPath
             else:
-                board[i].background_normal = ""
-                board[i].background_down = ""
+                board[i].image.source = os.path.dirname(__file__) + '\\data\\img\\empty.png'
 
 class ChessBoardSquare(Button):
     pass

@@ -3,8 +3,8 @@ import os
 class White():
     class King():
         def __init__(self) -> None:
-            self.imgPath = os.path.dirname(__file__) + "\\data\\img\\pieces\\Default\\wkn.svg"
-            self.imgRevPath = os.path.dirname(__file__) + "\\data\\img\\pieces\\Default\\wkr.svg"
+            self.imgPath = os.path.dirname(__file__) + "\\data\\img\\pieces\\Default\\wkn.png"
+            self.imgRevPath = os.path.dirname(__file__) + "\\data\\img\\pieces\\Default\\wkr.png"
             self.value = 0
             self.movement = []
         
@@ -13,8 +13,8 @@ class White():
 
     class Queen():
         def __init__(self) -> None:
-            self.imgPath = os.path.dirname(__file__) + "\\data\\img\\pieces\\Default\\wqn.svg"
-            self.imgRevPath = os.path.dirname(__file__) + "\\data\\img\\pieces\\Default\\wqr.svg"
+            self.imgPath = os.path.dirname(__file__) + "\\data\\img\\pieces\\Default\\wqn.png"
+            self.imgRevPath = os.path.dirname(__file__) + "\\data\\img\\pieces\\Default\\wqr.png"
             self.value = 9
             self.movement = []
         
@@ -23,8 +23,8 @@ class White():
 
     class Bishop():
         def __init__(self) -> None:
-            self.imgPath = os.path.dirname(__file__) + "\\data\\img\\pieces\\Default\\wbn.svg"
-            self.imgRevPath = os.path.dirname(__file__) + "\\data\\img\\pieces\\Default\\wbr.svg"
+            self.imgPath = os.path.dirname(__file__) + "\\data\\img\\pieces\\Default\\wbn.png"
+            self.imgRevPath = os.path.dirname(__file__) + "\\data\\img\\pieces\\Default\\wbr.png"
             self.value = 3
             self.movement = []
         
@@ -33,8 +33,8 @@ class White():
 
     class Knight():
         def __init__(self) -> None:
-            self.imgPath = os.path.dirname(__file__) + "\\data\\img\\pieces\\Default\\wnn.svg"
-            self.imgRevPath = os.path.dirname(__file__) + "\\data\\img\\pieces\\Default\\wnr.svg"
+            self.imgPath = os.path.dirname(__file__) + "\\data\\img\\pieces\\Default\\wnn.png"
+            self.imgRevPath = os.path.dirname(__file__) + "\\data\\img\\pieces\\Default\\wnr.png"
             self.value = 3
             self.movement = []
         
@@ -43,8 +43,8 @@ class White():
 
     class Rook():
         def __init__(self) -> None:
-            self.imgPath = os.path.dirname(__file__) + "\\data\\img\\pieces\\Default\\wrn.svg"
-            self.imgRevPath = os.path.dirname(__file__) + "\\data\\img\\pieces\\Default\\wrr.svg"
+            self.imgPath = os.path.dirname(__file__) + "\\data\\img\\pieces\\Default\\wrn.png"
+            self.imgRevPath = os.path.dirname(__file__) + "\\data\\img\\pieces\\Default\\wrr.png"
             self.value = 5
             self.movement = []
         
@@ -53,8 +53,8 @@ class White():
     
     class Pawn():
         def __init__(self) -> None:
-            self.imgPath = os.path.dirname(__file__) + "\\data\\img\\pieces\\Default\\wpn.svg"
-            self.imgRevPath = os.path.dirname(__file__) + "\\data\\img\\pieces\\Default\\wpr.svg"
+            self.imgPath = os.path.dirname(__file__) + "\\data\\img\\pieces\\Default\\wpn.png"
+            self.imgRevPath = os.path.dirname(__file__) + "\\data\\img\\pieces\\Default\\wpr.png"
             self.value = 1
             self.movement = []
         
@@ -64,8 +64,8 @@ class White():
 class Black():
     class King():
         def __init__(self) -> None:
-            self.imgPath = os.path.dirname(__file__) + "\\data\\img\\pieces\\Default\\bkn.svg"
-            self.imgRevPath = os.path.dirname(__file__) + "\\data\\img\\pieces\\Default\\bkr.svg"
+            self.imgPath = os.path.dirname(__file__) + "\\data\\img\\pieces\\Default\\bkn.png"
+            self.imgRevPath = os.path.dirname(__file__) + "\\data\\img\\pieces\\Default\\bkr.png"
             self.value = 0
             self.movement = []
         
@@ -74,8 +74,8 @@ class Black():
 
     class Queen():
         def __init__(self) -> None:
-            self.imgPath = os.path.dirname(__file__) + "\\data\\img\\pieces\\Default\\bqn.svg"
-            self.imgRevPath = os.path.dirname(__file__) + "\\data\\img\\pieces\\Default\\bqr.svg"
+            self.imgPath = os.path.dirname(__file__) + "\\data\\img\\pieces\\Default\\bqn.png"
+            self.imgRevPath = os.path.dirname(__file__) + "\\data\\img\\pieces\\Default\\bqr.png"
             self.value = 9
             self.movement = []
         
@@ -84,8 +84,8 @@ class Black():
 
     class Bishop():
         def __init__(self) -> None:
-            self.imgPath = os.path.dirname(__file__) + "\\data\\img\\pieces\\Default\\bbn.svg"
-            self.imgRevPath = os.path.dirname(__file__) + "\\data\\img\\pieces\\Default\\bbr.svg"
+            self.imgPath = os.path.dirname(__file__) + "\\data\\img\\pieces\\Default\\bbn.png"
+            self.imgRevPath = os.path.dirname(__file__) + "\\data\\img\\pieces\\Default\\bbr.png"
             self.value = 3
             self.movement = []
         
@@ -94,8 +94,8 @@ class Black():
 
     class Knight():
         def __init__(self) -> None:
-            self.imgPath = os.path.dirname(__file__) + "\\data\\img\\pieces\\Default\\bnn.svg"
-            self.imgRevPath = os.path.dirname(__file__) + "\\data\\img\\pieces\\Default\\bnr.svg"
+            self.imgPath = os.path.dirname(__file__) + "\\data\\img\\pieces\\Default\\bnn.png"
+            self.imgRevPath = os.path.dirname(__file__) + "\\data\\img\\pieces\\Default\\bnr.png"
             self.value = 3
             self.movement = []
         
@@ -104,8 +104,8 @@ class Black():
 
     class Rook():
         def __init__(self) -> None:
-            self.imgPath = os.path.dirname(__file__) + "\\data\\img\\pieces\\Default\\brn.svg"
-            self.imgRevPath = os.path.dirname(__file__) + "\\data\\img\\pieces\\Default\\brr.svg"
+            self.imgPath = os.path.dirname(__file__) + "\\data\\img\\pieces\\Default\\brn.png"
+            self.imgRevPath = os.path.dirname(__file__) + "\\data\\img\\pieces\\Default\\brr.png"
             self.value = 5
             self.movement = []
         
@@ -114,8 +114,8 @@ class Black():
     
     class Pawn():
         def __init__(self) -> None:
-            self.imgPath = os.path.dirname(__file__) + "\\data\\img\\pieces\\Default\\bpn.svg"
-            self.imgRevPath = os.path.dirname(__file__) + "\\data\\img\\pieces\\Default\\bpr.svg"
+            self.imgPath = os.path.dirname(__file__) + "\\data\\img\\pieces\\Default\\bpn.png"
+            self.imgRevPath = os.path.dirname(__file__) + "\\data\\img\\pieces\\Default\\bpr.png"
             self.value = 1
             self.movement = []
         
