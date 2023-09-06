@@ -6,14 +6,19 @@
 <MainScreen>:
     MDBoxLayout:
         ChessBoard:
-        MDBoxLayout:
-            orientation: "vertical"
-            MDLabel:
+        MDFloatLayout:
+            MDFillRoundFlatIconButton:
                 text: "10:00"
-                valign: "bottom"
-            MDLabel:
+                disabled: True
+                background_color: hex("ffffff")
+                icon: "clock-outline"
+                pos: (400,20)
+            MDFillRoundFlatIconButton:
                 text: "10:00"
-                valign: "top"
+                background_color: hex("ffffff")
+                disabled: True
+                icon: "clock-outline"
+                pos: (400,430)
                 
         
 
