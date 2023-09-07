@@ -9,7 +9,6 @@ from kivy.uix.button import Button, ButtonBehavior
 from kivy.uix.label import Label
 from kivy.utils import get_color_from_hex
 import os, math, time
-import cv2
 
 from pieces import White as w
 from pieces import Black as b
@@ -30,6 +29,8 @@ piecesLayout = [
     b.Pawn(), b.Pawn(), b.Pawn(), b.Pawn(), b.Pawn(), b.Pawn(), b.Pawn(), b.Pawn(),
     b.Rook(), b.Knight(), b.Bishop(), b.Queen(), b.King(), b.Bishop(), b.Knight(), b.Rook()
 ]
+selected : Button = None
+tempBackground_color = []
 
 class MainScreen(MDScreen):
     pass
@@ -57,7 +58,25 @@ class ChessBoard(MDGridLayout):
                 board[i].image.source = os.path.dirname(__file__) + '\\data\\img\\empty.png'
 
 class ChessBoardSquare(Button):
-    pass
+    def pressAction(button):
+        global selected
+        global tempBackground_color
+        if selected == None and piecesLayout[int(button.text)-1] != None:
+            selected = board[int(button.text)-1]
+            tempBackground_color = selected.background_color
+            r,g,b,a = selected.background_color
+            selected.background_color = [r*0.5, g, b, a] if selected.background_color == get_color_from_hex(board_prim) else [r*0.75, g, b, a]
+        elif piecesLayout[int(button.text)-1] == None and selected == None:
+            pass
+        elif selected.text == button.text or piecesLayout[int(button.text)-1] == None:
+            selected.background_color = tempBackground_color
+            selected = None
+        else:
+            selected.background_color = tempBackground_color
+            selected = board[int(button.text)-1]
+            tempBackground_color = selected.background_color
+            r,g,b,a = selected.background_color
+            selected.background_color = [r*0.5, g, b, a] if selected.background_color == get_color_from_hex(board_prim) else [r*0.75, g, b, a]
 
 class ChessApp(MDApp):
     def __init__(self, **kwargs):
