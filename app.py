@@ -96,3 +96,8 @@ class ChessApp(MDApp):
 if __name__ == "__main__":
     app = ChessApp()
     app.run()
+
+
+# move_register is vakje rechtsboven dat zetten bijhoudt. 
+# move_register = ChessBoardSquare(text="Zetten",background_color = color, color = [1,1,0,0],position = 305,240,size=15,240) # TI-84 (GR) scherm is 320x240 pixels.
+# self.add_widget(move_register)
