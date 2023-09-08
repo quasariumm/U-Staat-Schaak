@@ -3,10 +3,9 @@ from kivy.lang.builder import Builder
 from kivy.graphics import *
 from kivymd.uix.screen import MDScreen
 from kivymd.uix.gridlayout import MDGridLayout
-from kivymd.uix.boxlayout import MDBoxLayout
-from kivy.uix.image import Image
-from kivy.uix.button import Button, ButtonBehavior
-from kivy.uix.label import Label
+from kivy.uix.button import Button
+from kivymd.uix.list import MDList, OneLineListItem
+from kivymd.uix.scrollview import MDScrollView
 from kivy.utils import get_color_from_hex
 import os, math, time
 
@@ -78,6 +77,9 @@ class ChessBoardSquare(Button):
             r,g,b,a = selected.background_color
             selected.background_color = [r*0.5, g, b, a] if selected.background_color == get_color_from_hex(board_prim) else [r*0.75, g, b, a]
 
+class MovesList(MDList):
+    pass
+
 class ChessApp(MDApp):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -90,14 +92,10 @@ class ChessApp(MDApp):
 
     def on_start(self):
         ChessBoard.update_board(ChessBoard)
+        print(ChessBoard.width)
         return super().on_start()
         
 
 if __name__ == "__main__":
     app = ChessApp()
     app.run()
-
-
-# move_register is vakje rechtsboven dat zetten bijhoudt. 
-# move_register = ChessBoardSquare(text="Zetten",background_color = color, color = [1,1,0,0],position = 305,240,size=15,240) # TI-84 (GR) scherm is 320x240 pixels.
-# self.add_widget(move_register)
