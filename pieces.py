@@ -32,7 +32,8 @@ class White():
                 [(0,-1),(0,-2),(0,-3),(0,-4),(0,-5),(0,-6),(0,-7)],
                 [(1,1),(2,2),(3,3),(4,4),(5,5),(6,6),(7,7)],
                 [(-1,-1),(-2,-2),(-3,-3),(-4,-4),(-5,-5),(-6,-6),(-7,-7)],
-                [(1,-1),(2,-2),(3,-3),(4,-4),(5,-5),(6,-6),(7,-7)]
+                [(1,-1),(2,-2),(3,-3),(4,-4),(5,-5),(6,-6),(7,-7)],
+                [(-1,1),(-2,2),(-3,3),(-4,4),(-5,5),(-6,6),(-7,7)]
             ]
         
         def __add__(self, other):
@@ -43,7 +44,12 @@ class White():
             self.imgPath = os.path.dirname(__file__) + "\\data\\img\\pieces\\Default\\wbn.png"
             self.imgRevPath = os.path.dirname(__file__) + "\\data\\img\\pieces\\Default\\wbr.png"
             self.value = 3
-            self.movement = []
+            self.movement = [
+                [(1,1),(2,2),(3,3),(4,4),(5,5),(6,6),(7,7)],
+                [(-1,-1),(-2,-2),(-3,-3),(-4,-4),(-5,-5),(-6,-6),(-7,-7)],
+                [(1,-1),(2,-2),(3,-3),(4,-4),(5,-5),(6,-6),(7,-7)],
+                [(-1,1),(-2,2),(-3,3),(-4,4),(-5,5),(-6,6),(-7,7)]
+            ]
         
         def __add__(self, other):
             return self.value + other.value
@@ -63,7 +69,12 @@ class White():
             self.imgPath = os.path.dirname(__file__) + "\\data\\img\\pieces\\Default\\wrn.png"
             self.imgRevPath = os.path.dirname(__file__) + "\\data\\img\\pieces\\Default\\wrr.png"
             self.value = 5
-            self.movement = []
+            self.movement = [
+                [(1,0),(2,0),(3,0),(4,0),(5,0),(6,0),(7,0)],
+                [(-1,0),(-2,0),(-3,0),(-4,0),(-5,0),(-6,0),(-7,0)],
+                [(0,1),(0,2),(0,3),(0,4),(0,5),(0,6),(0,7)],
+                [(0,-1),(0,-2),(0,-3),(0,-4),(0,-5),(0,-6),(0,-7)]
+            ]
         
         def __add__(self, other):
             return self.value + other.value
