@@ -30,8 +30,6 @@ piecesLayout = [
     [b.Pawn(), b.Pawn(), b.Pawn(), b.Pawn(), b.Pawn(), b.Pawn(), b.Pawn(), b.Pawn()],
     [b.Rook(), b.Knight(), b.Bishop(), b.Queen(), b.King(), b.Bishop(), b.Knight(), b.Rook()]
 ]
-selected : Button = None
-tempBackground_color = []
 
 class MainScreen(MDScreen):
     pass
@@ -52,11 +50,12 @@ class ChessBoard(MDGridLayout):
             board[int(el.text)-1] = el
     
     def update_board(self):
-        for i,piece in enumerate(piecesLayout):
-            if piece:
-                board[i].image.source = piece.imgPath
-            else:
-                board[i].image.source = os.path.dirname(__file__) + '\\data\\img\\empty.png'
+        for i,row in enumerate(piecesLayout):
+            for i,piece in enumerate(row):
+                if piece:
+                    board[i].image.source = piece.imgPath
+                else:
+                    board[i].image.source = os.path.dirname(__file__) + '\\data\\img\\empty.png'
 
 class ChessBoardSquare(Button):
     def pressAction(button):

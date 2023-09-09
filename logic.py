@@ -1,9 +1,11 @@
 import math
 from kivy.utils import get_color_from_hex
+from kivy.uix.button import Button
 
 from app import board_prim, board, piecesLayout
 
-selected = None
+selected : Button = None
+tempBackground_color = []
 
 class Frontend():
     def square_press_action(button):
