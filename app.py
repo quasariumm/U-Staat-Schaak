@@ -19,6 +19,18 @@ board_sec = "#E4D9CA"
 
 board = [None] * 64
 
+#                                                        .::.
+#                                             _()_       _::_
+#                                   _O      _/____\_   _/____\_
+#            _  _  _     ^^__      / //\    \      /   \      /
+#           | || || |   /  - \_   {     }    \____/     \____/
+#           |_______| <|    __<    \___/     (____)     (____)
+#     _     \__ ___ / <|    \      (___)      |  |       |  |
+#    (_)     |___|_|  <|     \      |_|       |__|       |__|
+#   (___)    |_|___|  <|______\    /   \     /    \     /    \
+#   _|_|_    |___|_|   _|____|_   (_____)   (______)   (______)
+#  (_____)  (_______) (________) (_______) (________) (________)
+#  /_____\  /_______\ /________\ /_______\ /________\ /________\
 # PiecesLayout format: [a1, a2, ..., h7, h8]
 piecesLayout = [
     [w.Rook(), w.Knight(), w.Bishop(), w.Queen(), w.King(), w.Bishop(), w.Knight(), w.Rook()],
@@ -48,14 +60,15 @@ class ChessBoard(MDGridLayout):
         
         for el in self.children:
             board[int(el.text)-1] = el
+        self.update_board()
     
     def update_board(self):
         for i,row in enumerate(piecesLayout):
-            for i,piece in enumerate(row):
+            for j,piece in enumerate(row):
                 if piece:
-                    board[i].image.source = piece.imgPath
+                    board[8*i+j].image.source = piece.imgPath
                 else:
-                    board[i].image.source = os.path.dirname(__file__) + '\\data\\img\\empty.png'
+                    board[8*i+j].image.source = os.path.dirname(__file__) + '\\data\\img\\empty.png'
 
 class ChessBoardSquare(Button):
     def pressAction(button):
@@ -65,20 +78,10 @@ class MovesList(MDList):
     pass
 
 class ChessApp(MDApp):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.boardState = []
-
     def build(self):
         self.theme_cls.theme_style = 'Dark'
 
-        return Builder.load_file(os.path.dirname(__file__) + '\\app.kv')
-
-    def on_start(self):
-        ChessBoard.update_board(ChessBoard)
-        print(ChessBoard.width)
-        return super().on_start()
-        
+        return Builder.load_file(os.path.dirname(__file__) + '\\app.kv')        
 
 if __name__ == "__main__":
     app = ChessApp()
