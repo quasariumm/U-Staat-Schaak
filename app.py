@@ -12,6 +12,8 @@ import os, math, time
 from pieces import White as w
 from pieces import Black as b
 
+import logic
+
 board_prim = "#795C34"
 board_sec = "#E4D9CA"
 
@@ -19,14 +21,14 @@ board = [None] * 64
 
 # PiecesLayout format: [a1, a2, ..., h7, h8]
 piecesLayout = [
-    w.Rook(), w.Knight(), w.Bishop(), w.Queen(), w.King(), w.Bishop(), w.Knight(), w.Rook(),
-    w.Pawn(), w.Pawn(), w.Pawn(), w.Pawn(), w.Pawn(), w.Pawn(), w.Pawn(), w.Pawn(),
-    None, None, None, None, None, None, None, None,
-    None, None, None, None, None, None, None, None,
-    None, None, None, None, None, None, None, None, 
-    None, None, None, None, None, None, None, None,
-    b.Pawn(), b.Pawn(), b.Pawn(), b.Pawn(), b.Pawn(), b.Pawn(), b.Pawn(), b.Pawn(),
-    b.Rook(), b.Knight(), b.Bishop(), b.Queen(), b.King(), b.Bishop(), b.Knight(), b.Rook()
+    [w.Rook(), w.Knight(), w.Bishop(), w.Queen(), w.King(), w.Bishop(), w.Knight(), w.Rook()],
+    [w.Pawn(), w.Pawn(), w.Pawn(), w.Pawn(), w.Pawn(), w.Pawn(), w.Pawn(), w.Pawn()],
+    [None, None, None, None, None, None, None, None],
+    [None, None, None, None, None, None, None, None],
+    [None, None, None, None, None, None, None, None], 
+    [None, None, None, None, None, None, None, None],
+    [b.Pawn(), b.Pawn(), b.Pawn(), b.Pawn(), b.Pawn(), b.Pawn(), b.Pawn(), b.Pawn()],
+    [b.Rook(), b.Knight(), b.Bishop(), b.Queen(), b.King(), b.Bishop(), b.Knight(), b.Rook()]
 ]
 selected : Button = None
 tempBackground_color = []
@@ -58,24 +60,7 @@ class ChessBoard(MDGridLayout):
 
 class ChessBoardSquare(Button):
     def pressAction(button):
-        global selected
-        global tempBackground_color
-        if selected == None and piecesLayout[int(button.text)-1] != None:
-            selected = board[int(button.text)-1]
-            tempBackground_color = selected.background_color
-            r,g,b,a = selected.background_color
-            selected.background_color = [r*0.5, g, b, a] if selected.background_color == get_color_from_hex(board_prim) else [r*0.75, g, b, a]
-        elif piecesLayout[int(button.text)-1] == None and selected == None:
-            pass
-        elif selected.text == button.text or piecesLayout[int(button.text)-1] == None:
-            selected.background_color = tempBackground_color
-            selected = None
-        else:
-            selected.background_color = tempBackground_color
-            selected = board[int(button.text)-1]
-            tempBackground_color = selected.background_color
-            r,g,b,a = selected.background_color
-            selected.background_color = [r*0.5, g, b, a] if selected.background_color == get_color_from_hex(board_prim) else [r*0.75, g, b, a]
+        logic.Frontend.square_press_action(button)
 
 class MovesList(MDList):
     pass
