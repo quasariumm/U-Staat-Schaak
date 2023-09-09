@@ -27,6 +27,9 @@ class Frontend():
             tempBackground_color = selected.background_color
             r,g,b,a = selected.background_color
             selected.background_color = [r*0.5, g, b, a] if selected.background_color == get_color_from_hex(board_prim) else [r*0.75, g, b, a]
+    def show_legal_moves(piece):
+        moves = Backend.legal_moves(piece)
+        for move in moves: 
 
 class Backend():
     def legal_moves(piece):
