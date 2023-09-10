@@ -7,6 +7,8 @@ class White():
             self.imgRevPath = os.path.dirname(__file__) + "\\data\\img\\pieces\\Default\\wkr.png"
             self.value = 0
             self.movement = [
+                [(-2,0)], # Castle Queenside
+                [(2,0)], # Castle Kingside
                 [(-1,0)],
                 [(-1,1)],
                 [(0,1)],
@@ -59,7 +61,16 @@ class White():
             self.imgPath = os.path.dirname(__file__) + "\\data\\img\\pieces\\Default\\wnn.png"
             self.imgRevPath = os.path.dirname(__file__) + "\\data\\img\\pieces\\Default\\wnr.png"
             self.value = 3
-            self.movement = []
+            self.movement = [
+                [(-1,2)],
+                [(1,2)],
+                [(2,-1)],
+                [(2,1)],
+                [(-1,-2)],
+                [(1,-2)],
+                [(-2,-1)],
+                [(-2,1)]
+            ]
         
         def __add__(self, other):
             return self.value + other.value
@@ -84,7 +95,12 @@ class White():
             self.imgPath = os.path.dirname(__file__) + "\\data\\img\\pieces\\Default\\wpn.png"
             self.imgRevPath = os.path.dirname(__file__) + "\\data\\img\\pieces\\Default\\wpr.png"
             self.value = 1
-            self.movement = []
+            self.movement = [
+                [(0,2)], # First move
+                [(0,1)], # Normal
+                [(1,1)], # Capture left
+                [(-1,1)] # Capture right
+            ]
         
         def __add__(self, other):
             return self.value + other.value
