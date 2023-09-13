@@ -8,18 +8,23 @@ from app import board_prim, board, piecesLayout
 
 selected : Button = None
 tempBackground_color = []
+white_to_move = True
 
 class Frontend():
     def square_press_action(button):
         global selected
         global tempBackground_color
+        global white_to_move
         row = math.floor((int(button.text)-1)/8)
         file = (int(button.text)-1)%8
 
         if selected != None :
             if selected != button: 
-                Frontend.move(button)
-
+                print(selected.image.source[-7])
+                if (selected.image.source[-7] == 'w' and white_to_move) or (selected.image.source[-7] == 'b' and not white_to_move):
+                    Frontend.move(button)
+                    return
+    	    
         if selected == None and piecesLayout[row][file] != None:
             selected = board[int(button.text)-1]
             tempBackground_color = selected.background_color
@@ -40,6 +45,7 @@ class Frontend():
     def move(piece: Button):
         global selected
         global tempBackground_color
+        global white_to_move
         # moves = Backend.legal_moves(piece)
         # move_from = f'0{selected.text}' if int(selected.text)<10 else selected.text
         # move_to = f'0{piece.text}' if int(piece.text)<10 else piece.text
@@ -49,6 +55,8 @@ class Frontend():
         selected.image.source = os.path.dirname(__file__) + "\\data\\img\\empty.png"
         selected.background_color = tempBackground_color
         selected = None
+        white_to_move = not white_to_move
+        Backend.update_pieces_layout()
 
 class Backend():
     def legal_moves(piece):
@@ -66,10 +74,11 @@ class Backend():
             'bn': b.Knight(),
             'bb': b.Bishop(),
             'br': b.Rook(),
-            'bq': b.Queen()}
+            'bq': b.Queen(),
+            'pt': None}
         for i,square in enumerate(board):
-            piece = dictt[square.image.source[-7:-6]]
-            row = math.floor((int(i.text)-1)/8)
-            file = (int(i.text)-1)%8
+            piece = dictt[square.image.source[-7:-5]]
+            row = math.floor((int(square.text)-1)/8)
+            file = (int(square.text)-1)%8
             piecesLayout[row][file]= piece
 
