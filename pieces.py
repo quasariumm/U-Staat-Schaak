@@ -7,8 +7,8 @@ class White():
             self.imgRevPath = os.path.dirname(__file__) + "\\data\\img\\pieces\\Default\\wkr.png"
             self.value = 0
             self.movement = [
-                [(-2,0)], # Castle Queenside
-                [(2,0)], # Castle Kingside
+                [(-2,0), (-4,0)], # Castle Queenside
+                [(2,0), (3,0)], # Castle Kingside
                 [(-1,0)],
                 [(-1,1)],
                 [(0,1)],
@@ -111,7 +111,18 @@ class Black():
             self.imgPath = os.path.dirname(__file__) + "\\data\\img\\pieces\\Default\\bkn.png"
             self.imgRevPath = os.path.dirname(__file__) + "\\data\\img\\pieces\\Default\\bkr.png"
             self.value = 0
-            self.movement = []
+            self.movement = [
+                [(-2,0), (-4,0)], # Castle Queenside
+                [(2,0), (3,0)], # Castle Kingside
+                [(-1,0)],
+                [(-1,1)],
+                [(0,1)],
+                [(1,1)],
+                [(1,0)],
+                [(1,-1)],
+                [(0,-1)],
+                [(-1,-1)]
+            ]
         
         def __add__(self, other):
             return self.value + other.value
@@ -121,7 +132,16 @@ class Black():
             self.imgPath = os.path.dirname(__file__) + "\\data\\img\\pieces\\Default\\bqn.png"
             self.imgRevPath = os.path.dirname(__file__) + "\\data\\img\\pieces\\Default\\bqr.png"
             self.value = 9
-            self.movement = []
+            self.movement = [
+                [(1,0),(2,0),(3,0),(4,0),(5,0),(6,0),(7,0)],
+                [(-1,0),(-2,0),(-3,0),(-4,0),(-5,0),(-6,0),(-7,0)],
+                [(0,1),(0,2),(0,3),(0,4),(0,5),(0,6),(0,7)],
+                [(0,-1),(0,-2),(0,-3),(0,-4),(0,-5),(0,-6),(0,-7)],
+                [(1,1),(2,2),(3,3),(4,4),(5,5),(6,6),(7,7)],
+                [(-1,-1),(-2,-2),(-3,-3),(-4,-4),(-5,-5),(-6,-6),(-7,-7)],
+                [(1,-1),(2,-2),(3,-3),(4,-4),(5,-5),(6,-6),(7,-7)],
+                [(-1,1),(-2,2),(-3,3),(-4,4),(-5,5),(-6,6),(-7,7)]
+            ]
         
         def __add__(self, other):
             return self.value + other.value
@@ -131,7 +151,12 @@ class Black():
             self.imgPath = os.path.dirname(__file__) + "\\data\\img\\pieces\\Default\\bbn.png"
             self.imgRevPath = os.path.dirname(__file__) + "\\data\\img\\pieces\\Default\\bbr.png"
             self.value = 3
-            self.movement = []
+            self.movement = [
+                [(1,1),(2,2),(3,3),(4,4),(5,5),(6,6),(7,7)],
+                [(-1,-1),(-2,-2),(-3,-3),(-4,-4),(-5,-5),(-6,-6),(-7,-7)],
+                [(1,-1),(2,-2),(3,-3),(4,-4),(5,-5),(6,-6),(7,-7)],
+                [(-1,1),(-2,2),(-3,3),(-4,4),(-5,5),(-6,6),(-7,7)]
+            ]
         
         def __add__(self, other):
             return self.value + other.value
@@ -141,7 +166,16 @@ class Black():
             self.imgPath = os.path.dirname(__file__) + "\\data\\img\\pieces\\Default\\bnn.png"
             self.imgRevPath = os.path.dirname(__file__) + "\\data\\img\\pieces\\Default\\bnr.png"
             self.value = 3
-            self.movement = []
+            self.movement = [
+                [(-1,2)],
+                [(1,2)],
+                [(2,-1)],
+                [(2,1)],
+                [(-1,-2)],
+                [(1,-2)],
+                [(-2,-1)],
+                [(-2,1)]
+            ]
         
         def __add__(self, other):
             return self.value + other.value
@@ -151,7 +185,12 @@ class Black():
             self.imgPath = os.path.dirname(__file__) + "\\data\\img\\pieces\\Default\\brn.png"
             self.imgRevPath = os.path.dirname(__file__) + "\\data\\img\\pieces\\Default\\brr.png"
             self.value = 5
-            self.movement = []
+            self.movement = [
+                [(1,0),(2,0),(3,0),(4,0),(5,0),(6,0),(7,0)],
+                [(-1,0),(-2,0),(-3,0),(-4,0),(-5,0),(-6,0),(-7,0)],
+                [(0,1),(0,2),(0,3),(0,4),(0,5),(0,6),(0,7)],
+                [(0,-1),(0,-2),(0,-3),(0,-4),(0,-5),(0,-6),(0,-7)]
+            ]
         
         def __add__(self, other):
             return self.value + other.value
@@ -161,7 +200,12 @@ class Black():
             self.imgPath = os.path.dirname(__file__) + "\\data\\img\\pieces\\Default\\bpn.png"
             self.imgRevPath = os.path.dirname(__file__) + "\\data\\img\\pieces\\Default\\bpr.png"
             self.value = 1
-            self.movement = []
+            self.movement = [
+                [(0,-2)], # First move
+                [(0,-1)], # Normal
+                [(1,-1)], # Capture left
+                [(-1,-1)] # Capture right
+            ]
         
         def __add__(self, other):
             return self.value + other.value
