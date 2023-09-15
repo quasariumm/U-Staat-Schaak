@@ -129,10 +129,12 @@ class Backend():
                     tmpRow = row + option[1]
                     tmpFile = file + option[0]
                     if (tmpRow > 7 or tmpRow < 0 or tmpFile > 7 or tmpFile < 0):
-                        if (piecesLayout[tmpRow][tmpFile] != None):
-                            break
+                        break
                     else:
-                        legalmoves.append([option, 'n'])
+                        if (piecesLayout[tmpRow][tmpFile] == None):
+                            legalmoves.append([option, 'n'])
+                        else:
+                            break
         if len(legalmoves) > 0:
             well_formatted = []
             for el in legalmoves:
