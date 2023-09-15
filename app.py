@@ -35,12 +35,12 @@ board = [None] * 64
 piecesLayout = [
     [w.Rook(), w.Knight(), w.Bishop(), w.Queen(), w.King(), w.Bishop(), w.Knight(), w.Rook()],
     [w.Pawn(), w.Pawn(), w.Pawn(), w.Pawn(), w.Pawn(), w.Pawn(), w.Pawn(), w.Pawn()],
-    [None, b.Pawn(), None, None, None, None, None, None],
+    [None, None, None, None, None, None, None, None],
     [None, None, None, None, None, None, None, None],
     [None, None, None, None, None, None, None, None], 
-    [None, w.Pawn(), None, None, None, None, None, None],
+    [None, None, None, None, None, None, None, None],
     [b.Pawn(), b.Pawn(), b.Pawn(), b.Pawn(), b.Pawn(), b.Pawn(), b.Pawn(), b.Pawn()],
-    [b.Rook(), None, None, None, b.King(), None, None, b.Rook()]
+    [b.Rook(), b.Knight(), b.Bishop(), b.Queen(), b.King(), b.Bishop(), b.Knight(), b.Rook()]
 ]
 
 class MainScreen(MDScreen):
