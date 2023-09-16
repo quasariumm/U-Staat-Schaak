@@ -50,15 +50,17 @@ class Frontend():
         if selected != None :
             if selected != button:
                 if (selected.image.source[-7] == 'w' and white_to_move) or (selected.image.source[-7] == 'b' and not white_to_move):
-                    Frontend.move(selected, button)
-                    return
+                    code = Frontend.move(selected, button)
+                    if code == 200:
+                        return
     	    
         if selected == None and piecesLayout[row][file] != None:
-            selected = board[int(button.text)-1]
+            selected = button
             tempBackground_color = selected.background_color
-            r,g,b,a = selected.background_color
-            selected.background_color = [r*0.5, g, b, a] if selected.background_color == get_color_from_hex(board_prim) else [r*0.75, g, b, a]
-            Frontend.show_legal_move_indicators(selected)
+            r,g,bl,a = selected.background_color
+            selected.background_color = [r*0.5, g, bl, a] if selected.background_color == get_color_from_hex(board_prim) else [r*0.75, g, b, a]
+            if (issubclass(type(piecesLayout[row][file]), (w.Pawn, w.King, w.Knight, w.Bishop, w.Rook, w.Queen)) and white_to_move) or (issubclass(type(piecesLayout[row][file]), (b.Pawn, b.King, b.Knight, b.Bishop, b.Rook, b.Queen))):
+                Frontend.show_legal_move_indicators(button)
         elif piecesLayout[row][file] == None and selected == None:
             pass
         elif selected.text == button.text or piecesLayout[row][file] == None:
@@ -68,40 +70,45 @@ class Frontend():
         else:
             Frontend.clear_legal_moves_indicators()
             selected.background_color = tempBackground_color
-            selected = board[int(button.text)-1]
+            selected = button
             tempBackground_color = selected.background_color
-            r,g,b,a = selected.background_color
-            selected.background_color = [r*0.5, g, b, a] if selected.background_color == get_color_from_hex(board_prim) else [r*0.75, g, b, a]
-            Frontend.show_legal_move_indicators(selected)
+            r,g,bl,a = selected.background_color
+            selected.background_color = [r*0.5, g, bl, a] if selected.background_color == get_color_from_hex(board_prim) else [r*0.75, g, b, a]
+            if (issubclass(type(piecesLayout[row][file]), (w.Pawn, w.King, w.Knight, w.Bishop, w.Rook, w.Queen)) and white_to_move) or (issubclass(type(piecesLayout[row][file]), (b.Pawn, b.King, b.Knight, b.Bishop, b.Rook, b.Queen))):
+                Frontend.show_legal_move_indicators(button)
         
     def move(check_piece, piece: Button):
         global selected
         global tempBackground_color
         global white_to_move
         moves = Backend.legal_moves(check_piece)
+        moves_otherformat = [m[0:4] for m in moves]
         i1 = int(selected.text)-1
         i2 = int(piece.text)-1
         move_from = f'0{i1}' if i1<10 else str(i1)
         move_to = f'0{i2}' if i2<10 else str(i2)
         move = move_from + move_to
         if moves:
-            for movee in moves:
-                if move == movee[0:4]:
-                    piece.image.source = selected.image.source 
-                    selected.image.source = os.path.dirname(__file__) + "\\data\\img\\empty.png"
-                    selected.background_color = tempBackground_color
-                    selected = None
-                    white_to_move = not white_to_move
-                    Backend.update_pieces_layout()
-                    Backend.update_bitboards()
-                    Frontend.clear_legal_moves_indicators()
+            if move in moves_otherformat:
+                piece.image.source = selected.image.source 
+                selected.image.source = os.path.dirname(__file__) + "\\data\\img\\empty.png"
+                selected.background_color = tempBackground_color
+                selected = None
+                white_to_move = not white_to_move
+                Backend.update_pieces_layout()
+                Backend.update_bitboards()
+                Frontend.clear_legal_moves_indicators()
+                return 200
+            else:
+                return 404
 
     def show_legal_move_indicators(button):
         row = math.floor((int(button.text)-1)/8)
         file = (int(button.text)-1)%8
         moves = Backend.legal_moves(button)
-        for move in moves:
-            board[int(move[2:3])].background_normal = os.path.dirname(__file__) + '\\data\\img\\legal_capture.png'
+        if moves:
+            for move in moves:
+                board[int(move[2:3])].background_normal = os.path.dirname(__file__) + '\\data\\img\\legal_capture.png'
 
     def clear_legal_moves_indicators():
         for square in board:
