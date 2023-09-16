@@ -59,7 +59,7 @@ class Frontend():
             tempBackground_color = selected.background_color
             r,g,bl,a = selected.background_color
             selected.background_color = [r*0.5, g, bl, a] if selected.background_color == get_color_from_hex(board_prim) else [r*0.75, g, bl, a]
-            if (issubclass(type(piecesLayout[row][file]), (w.Pawn, w.King, w.Knight, w.Bishop, w.Rook, w.Queen)) and white_to_move) or (issubclass(type(piecesLayout[row][file]), (b.Pawn, b.King, b.Knight, b.Bishop, b.Rook, b.Queen))):
+            if (issubclass(type(piecesLayout[row][file]), (w.Pawn, w.King, w.Knight, w.Bishop, w.Rook, w.Queen)) and white_to_move) or (issubclass(type(piecesLayout[row][file]), (b.Pawn, b.King, b.Knight, b.Bishop, b.Rook, b.Queen)) and not white_to_move):
                 Frontend.show_legal_move_indicators(button)
         elif piecesLayout[row][file] == None and selected == None:
             pass
@@ -74,7 +74,7 @@ class Frontend():
             tempBackground_color = selected.background_color
             r,g,bl,a = selected.background_color
             selected.background_color = [r*0.5, g, bl, a] if selected.background_color == get_color_from_hex(board_prim) else [r*0.75, g, bl, a]
-            if (issubclass(type(piecesLayout[row][file]), (w.Pawn, w.King, w.Knight, w.Bishop, w.Rook, w.Queen)) and white_to_move) or (issubclass(type(piecesLayout[row][file]), (b.Pawn, b.King, b.Knight, b.Bishop, b.Rook, b.Queen))):
+            if (issubclass(type(piecesLayout[row][file]), (w.Pawn, w.King, w.Knight, w.Bishop, w.Rook, w.Queen)) and white_to_move) or (issubclass(type(piecesLayout[row][file]), (b.Pawn, b.King, b.Knight, b.Bishop, b.Rook, b.Queen)) and not white_to_move):
                 Frontend.show_legal_move_indicators(button)
         
     def move(check_piece, piece: Button):
@@ -166,7 +166,9 @@ class Backend():
                 tmpRow = row + tmpmove[1]
                 tmpFile = file + tmpmove[0]
                 if not (tmpRow > 7 or tmpRow < 0 or tmpFile > 7 or tmpFile < 0):
-                    if not (piecesLayout[tmpRow][tmpFile] != None):
+                    if (piecesLayout[tmpRow][tmpFile] == None)\
+                    or (button.image.source[-7] == 'b' and issubclass(type(piecesLayout[tmpRow][tmpFile]), (w.Pawn, w.King, w.Knight, w.Bishop, w.Rook, w.Queen)))\
+                    or (button.image.source[-7] == 'w' and issubclass(type(piecesLayout[tmpRow][tmpFile]), (b.Pawn, b.King, b.Knight, b.Bishop, b.Rook, b.Queen))):
                         legalmoves.append([tmpmove,'n'])
         else:
             for direction in pieceType.movement:
@@ -178,6 +180,10 @@ class Backend():
                     else:
                         if (piecesLayout[tmpRow][tmpFile] == None):
                             legalmoves.append([option, 'n'])
+                        elif (button.image.source[-7] == 'b' and issubclass(type(piecesLayout[tmpRow][tmpFile]), (w.Pawn, w.King, w.Knight, w.Bishop, w.Rook, w.Queen)))\
+                        or (button.image.source[-7] == 'w' and issubclass(type(piecesLayout[tmpRow][tmpFile]), (b.Pawn, b.King, b.Knight, b.Bishop, b.Rook, b.Queen))):
+                            legalmoves.append([option, 'n'])
+                            break
                         else:
                             break
         if len(legalmoves) > 0:
