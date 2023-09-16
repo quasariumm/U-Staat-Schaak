@@ -58,7 +58,7 @@ class Frontend():
             selected = button
             tempBackground_color = selected.background_color
             r,g,bl,a = selected.background_color
-            selected.background_color = [r*0.5, g, bl, a] if selected.background_color == get_color_from_hex(board_prim) else [r*0.75, g, b, a]
+            selected.background_color = [r*0.5, g, bl, a] if selected.background_color == get_color_from_hex(board_prim) else [r*0.75, g, bl, a]
             if (issubclass(type(piecesLayout[row][file]), (w.Pawn, w.King, w.Knight, w.Bishop, w.Rook, w.Queen)) and white_to_move) or (issubclass(type(piecesLayout[row][file]), (b.Pawn, b.King, b.Knight, b.Bishop, b.Rook, b.Queen))):
                 Frontend.show_legal_move_indicators(button)
         elif piecesLayout[row][file] == None and selected == None:
@@ -73,7 +73,7 @@ class Frontend():
             selected = button
             tempBackground_color = selected.background_color
             r,g,bl,a = selected.background_color
-            selected.background_color = [r*0.5, g, bl, a] if selected.background_color == get_color_from_hex(board_prim) else [r*0.75, g, b, a]
+            selected.background_color = [r*0.5, g, bl, a] if selected.background_color == get_color_from_hex(board_prim) else [r*0.75, g, bl, a]
             if (issubclass(type(piecesLayout[row][file]), (w.Pawn, w.King, w.Knight, w.Bishop, w.Rook, w.Queen)) and white_to_move) or (issubclass(type(piecesLayout[row][file]), (b.Pawn, b.King, b.Knight, b.Bishop, b.Rook, b.Queen))):
                 Frontend.show_legal_move_indicators(button)
         
@@ -103,12 +103,10 @@ class Frontend():
                 return 404
 
     def show_legal_move_indicators(button):
-        row = math.floor((int(button.text)-1)/8)
-        file = (int(button.text)-1)%8
         moves = Backend.legal_moves(button)
         if moves:
             for move in moves:
-                board[int(move[2:3])].background_normal = os.path.dirname(__file__) + '\\data\\img\\legal_capture.png'
+                board[int(move[2:4])].background_normal = os.path.dirname(__file__) + '\\data\\img\\legal_capture.png'
 
     def clear_legal_moves_indicators():
         for square in board:
@@ -133,10 +131,13 @@ class Backend():
             # En passant TODO (this will be such a pain in the ass to make)
 
             # Capture
-            if (piecesLayout[row+pieceType.movement[2][0][1]][file+pieceType.movement[2][0][0]] != None):
-                legalmoves.append([pieceType.movement[2][0], 'n'])
-            elif (piecesLayout[row+pieceType.movement[3][0][1]][file+pieceType.movement[3][0][0]] != None):
-                legalmoves.append([pieceType.movement[3][0], 'n'])
+            try:
+                if (piecesLayout[row+pieceType.movement[2][0][1]][file+pieceType.movement[2][0][0]] != None):
+                    legalmoves.append([pieceType.movement[2][0], 'n'])
+                elif (piecesLayout[row+pieceType.movement[3][0][1]][file+pieceType.movement[3][0][0]] != None):
+                    legalmoves.append([pieceType.movement[3][0], 'n'])
+            except:
+                pass # Probably IndexError
             # First move
             if (isinstance(pieceType, w.Pawn) and row == 1) or (isinstance(pieceType, b.Pawn) and row == 6):
                 if piecesLayout[row + pieceType.movement[0][0][1]][file] == None:
