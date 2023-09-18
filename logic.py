@@ -20,6 +20,10 @@ black_krook_moved = False
 black_qrook_moved = False
 black_king_moved = False
 
+check = False
+white_king_index = 4
+black_king_index = 60
+
 #      __    _ __  __                         __    
 #     / /_  (_) /_/ /_  ____  ____ __________/ /____
 #    / __ \/ / __/ __ \/ __ \/ __ `/ ___/ __  / ___/
@@ -44,8 +48,7 @@ class Frontend():
         global selected
         global tempBackground_color
         global white_to_move
-        row = math.floor((int(button.text)-1)/8)
-        file = (int(button.text)-1)%8
+        row, file = Utils.index_to_rowfile(button)
 
         if selected != None :
             if selected != button:
@@ -81,9 +84,9 @@ class Frontend():
         global selected
         global tempBackground_color
         global white_to_move
+        global check, white_king_index, black_king_index
         global white_king_moved, white_krook_moved, white_qrook_moved, black_king_moved, black_krook_moved, black_qrook_moved
-        row = math.floor((int(check_piece.text)-1)/8)
-        file = (int(check_piece.text)-1)%8
+        row, file = Utils.index_to_rowfile(check_piece)
         pieceType = piecesLayout[row][file]
 
         moves = Backend.legal_moves(check_piece)
@@ -123,10 +126,14 @@ class Frontend():
                 selected = None
                 white_to_move = not white_to_move
                 # Check if rook or king has moved
-                if isinstance(pieceType, w.King) and not white_king_moved:
-                    white_king_moved = True
-                elif isinstance(pieceType, b.King) and not black_king_moved:
-                    black_king_moved = True
+                if isinstance(pieceType, w.King):
+                    white_king_index = Utils.rowfile_to_index(row, file)
+                    if not white_king_moved:
+                        white_king_moved = True
+                elif isinstance(pieceType, b.King):
+                    black_king_index = Utils.rowfile_to_index(row, file)
+                    if not black_king_moved:
+                        black_king_moved = True
                 elif isinstance(pieceType, w.Rook):
                     if file == 0 and not white_qrook_moved:
                         white_qrook_moved = True
@@ -139,6 +146,7 @@ class Frontend():
                         black_krook_moved = True
                 Backend.update_pieces_layout()
                 Backend.update_bitboards()
+                check = Backend.check_check(dest, black_king_index if white_to_move else white_king_index)
                 Frontend.clear_legal_moves_indicators()
                 return 200
             else:
@@ -164,10 +172,11 @@ class Backend():
     # 'e' - en passant
     # 'k' or 'q' - King- or Queenside castling
     def legal_moves(button):
-        row = math.floor((int(button.text)-1)/8)
-        file = (int(button.text)-1)%8
+        global check
+        row, file = Utils.index_to_rowfile(button)
         pieceType = piecesLayout[row][file]
         legalmoves = []
+
         # Pawn specific
         if isinstance(pieceType, w.Pawn) or isinstance(pieceType, b.Pawn):
             # En passant TODO (this will be such a pain in the ass to make)
@@ -175,9 +184,13 @@ class Backend():
             # Capture
             try:
                 if (piecesLayout[row+pieceType.movement[2][0][1]][file+pieceType.movement[2][0][0]] != None):
-                    legalmoves.append([pieceType.movement[2][0], 'n'])
+                    if (button.image.source[-7] == 'b' and issubclass(type(piecesLayout[tmpRow][tmpFile]), (w.Pawn, w.King, w.Knight, w.Bishop, w.Rook, w.Queen)))\
+                    or (button.image.source[-7] == 'w' and issubclass(type(piecesLayout[tmpRow][tmpFile]), (b.Pawn, b.King, b.Knight, b.Bishop, b.Rook, b.Queen))):
+                        legalmoves.append([pieceType.movement[2][0], 'n'])
                 elif (piecesLayout[row+pieceType.movement[3][0][1]][file+pieceType.movement[3][0][0]] != None):
-                    legalmoves.append([pieceType.movement[3][0], 'n'])
+                    if (button.image.source[-7] == 'b' and issubclass(type(piecesLayout[tmpRow][tmpFile]), (w.Pawn, w.King, w.Knight, w.Bishop, w.Rook, w.Queen)))\
+                    or (button.image.source[-7] == 'w' and issubclass(type(piecesLayout[tmpRow][tmpFile]), (b.Pawn, b.King, b.Knight, b.Bishop, b.Rook, b.Queen))):
+                        legalmoves.append([pieceType.movement[3][0], 'n'])
             except:
                 pass # Probably IndexError
             # First move
@@ -189,17 +202,18 @@ class Backend():
                 legalmoves.append([pieceType.movement[1][0], 'n'])
         # King specific
         elif isinstance(pieceType, w.King) or isinstance(pieceType, b.King):
+            king_moves = []
             try:
                 # Castling kingside
                 if (isinstance(pieceType, w.King) and not white_king_moved and not white_krook_moved and piecesLayout[row][file+1] == None and piecesLayout[row][file+2] == None)\
                 or (isinstance(pieceType, b.King) and not black_king_moved and not black_krook_moved and piecesLayout[row][file+1] == None and piecesLayout[row][file+2] == None):
-                    legalmoves.append([pieceType.movement[1][0], 'k'])
-                    legalmoves.append([pieceType.movement[1][1], 'k'])
+                    king_moves.append([pieceType.movement[1][0], 'k'])
+                    king_moves.append([pieceType.movement[1][1], 'k'])
                 # Castle queenside
                 if (isinstance(pieceType, w.King) and not white_king_moved and not white_qrook_moved and piecesLayout[row][file-1] == None and piecesLayout[row][file-2] == None and piecesLayout[row][file-3] == None)\
                 or (isinstance(pieceType, b.King) and not black_king_moved and not black_qrook_moved and piecesLayout[row][file-1] == None and piecesLayout[row][file-2] == None and piecesLayout[row][file-3] == None):
-                    legalmoves.append([pieceType.movement[0][0], 'q'])
-                    legalmoves.append([pieceType.movement[0][1], 'q'])
+                    king_moves.append([pieceType.movement[0][0], 'q'])
+                    king_moves.append([pieceType.movement[0][1], 'q'])
             except:
                 print('Thou shalt not be castling this move.')
 
@@ -211,7 +225,8 @@ class Backend():
                     if (piecesLayout[tmpRow][tmpFile] == None)\
                     or (button.image.source[-7] == 'b' and issubclass(type(piecesLayout[tmpRow][tmpFile]), (w.Pawn, w.King, w.Knight, w.Bishop, w.Rook, w.Queen)))\
                     or (button.image.source[-7] == 'w' and issubclass(type(piecesLayout[tmpRow][tmpFile]), (b.Pawn, b.King, b.Knight, b.Bishop, b.Rook, b.Queen))):
-                        legalmoves.append([tmpmove,'n'])
+                        king_moves.append([tmpmove,'n'])
+            legalmoves = Backend.check_king_legal_moves(king_moves, pieceType)
         else:
             for direction in pieceType.movement:
                 for option in direction:
@@ -238,9 +253,53 @@ class Backend():
                 move_to = f'0{i}' if i<10 else str(i)
                 well_formatted.append(move_from + move_to + moveType)
             return well_formatted
-        
-    def switch_bit_on(board, i):
-        return board | 2**i
+    
+    def black_and_white_pieces_list():
+        white_pieces = []
+        black_pieces = []
+        for i,row in enumerate(piecesLayout):
+            for j,square in enumerate(row):
+                if issubclass(type(square), (w.Pawn, w.King, w.Knight, w.Bishop, w.Rook, w.Queen)):
+                    white_pieces.append(board[8*i+j])
+                elif issubclass(type(square), (b.Pawn, b.King, b.Knight, b.Bishop, b.Rook, b.Queen)):
+                    black_pieces.append(board[8*i+j])
+        return white_pieces, black_pieces
+    
+    # This function is called after every move, because checking it during the legal move calculation is just a bit too much work.
+    def check_check(piece, king_index):
+        moves = Backend.legal_moves(piece)
+        if moves:
+            if king_index in [int(m[2:4]) for m in moves]:
+                return True
+        return False
+    
+    def check_king_legal_moves(moves_list:list, pieceType):
+        white_pieces, black_pieces = Backend.black_and_white_pieces_list()
+        if isinstance(pieceType, w.King):
+            for piece in black_pieces:
+                if isinstance(piece, b.King):
+                    continue
+                moves = Backend.legal_moves(piece)
+                if moves:
+                    # TODO: TypeError: 'NoneType' object is not iterable
+                    intersection = [i for i,j in zip(moves_list, moves) if i == j]
+                    if intersection:
+                        for m in intersection:
+                            moves_list.remove(m)
+        else:
+            for piece in white_pieces:
+                if isinstance(piece, w.King):
+                    continue
+                moves = Backend.legal_moves(piece)
+                intersection = [i for i,j in zip(moves_list, moves) if i == j]
+                if intersection:
+                    for m in intersection:
+                        moves_list.remove(m)
+        # Check if the king can capture any of the opponent's piece
+        # If so, look at that situation and look if a piece of the opponent can capture your king
+        # If that is the case, the king can't capture said piece
+
+        return moves_list
 
     def update_bitboards():
         global white_bishop_bitboard, white_king_bitboard, white_knight_bitboard, white_pawn_bitboard, white_queen_bitboard, white_rook_bitboard, black_bishop_bitboard, black_king_bitboard, black_knight_bitboard, black_pawn_bitboard, black_queen_bitboard, black_rook_bitboard
@@ -253,29 +312,29 @@ class Backend():
                 else:
                     pieceType = square
                     if isinstance(pieceType, w.Pawn):
-                        white_pawn_bitboard = Backend.switch_bit_on(white_pawn_bitboard, 8*i+j)
+                        white_pawn_bitboard = Utils.switch_bit_on(white_pawn_bitboard, 8*i+j)
                     elif isinstance(pieceType, b.Pawn):
-                        black_pawn_bitboard = Backend.switch_bit_on(black_pawn_bitboard, 8*i+j)
+                        black_pawn_bitboard = Utils.switch_bit_on(black_pawn_bitboard, 8*i+j)
                     elif isinstance(pieceType, w.Rook):
-                        white_rook_bitboard = Backend.switch_bit_on(white_rook_bitboard, 8*i+j)
+                        white_rook_bitboard = Utils.switch_bit_on(white_rook_bitboard, 8*i+j)
                     elif isinstance(pieceType, b.Rook):
-                        black_rook_bitboard = Backend.switch_bit_on(black_rook_bitboard, 8*i+j)
+                        black_rook_bitboard = Utils.switch_bit_on(black_rook_bitboard, 8*i+j)
                     elif isinstance(pieceType, w.Knight):
-                        white_knight_bitboard = Backend.switch_bit_on(white_knight_bitboard, 8*i+j)
+                        white_knight_bitboard = Utils.switch_bit_on(white_knight_bitboard, 8*i+j)
                     elif isinstance(pieceType, b.Knight):
-                        black_knight_bitboard = Backend.switch_bit_on(black_knight_bitboard, 8*i+j)
+                        black_knight_bitboard = Utils.switch_bit_on(black_knight_bitboard, 8*i+j)
                     elif isinstance(pieceType, w.Bishop):
-                        white_bishop_bitboard = Backend.switch_bit_on(white_bishop_bitboard, 8*i+j)
+                        white_bishop_bitboard = Utils.switch_bit_on(white_bishop_bitboard, 8*i+j)
                     elif isinstance(pieceType, b.Bishop):
-                        black_bishop_bitboard = Backend.switch_bit_on(black_bishop_bitboard, 8*i+j)
+                        black_bishop_bitboard = Utils.switch_bit_on(black_bishop_bitboard, 8*i+j)
                     elif isinstance(pieceType, w.Queen):
-                        white_queen_bitboard = Backend.switch_bit_on(white_queen_bitboard, 8*i+j)
+                        white_queen_bitboard = Utils.switch_bit_on(white_queen_bitboard, 8*i+j)
                     elif isinstance(pieceType, b.Queen):
-                        black_queen_bitboard = Backend.switch_bit_on(black_queen_bitboard, 8*i+j)
+                        black_queen_bitboard = Utils.switch_bit_on(black_queen_bitboard, 8*i+j)
                     elif isinstance(pieceType, w.King):
-                        white_king_bitboard = Backend.switch_bit_on(white_king_bitboard, 8*i+j)
+                        white_king_bitboard = Utils.switch_bit_on(white_king_bitboard, 8*i+j)
                     elif isinstance(pieceType, b.King):
-                        black_king_bitboard = Backend.switch_bit_on(black_king_bitboard, 8*i+j)
+                        black_king_bitboard = Utils.switch_bit_on(black_king_bitboard, 8*i+j)
         # print('wb: ' + bin(white_bishop_bitboard))
         # print('wk: ' + bin(white_king_bitboard))
         # print('wn: ' + bin(white_knight_bitboard))
@@ -309,3 +368,12 @@ class Backend():
             file = (int(square.text)-1)%8
             piecesLayout[row][file]= piece
 
+class Utils():
+    def switch_bit_on(board, i):
+        return board | 2**i
+
+    def index_to_rowfile(button):
+        return math.floor((int(button.text)-1)/8), (int(button.text)-1)%8
+    
+    def rowfile_to_index(row, file):
+        return 8*row+file
