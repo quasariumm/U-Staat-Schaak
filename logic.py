@@ -77,24 +77,66 @@ class Frontend():
             if (issubclass(type(piecesLayout[row][file]), (w.Pawn, w.King, w.Knight, w.Bishop, w.Rook, w.Queen)) and white_to_move) or (issubclass(type(piecesLayout[row][file]), (b.Pawn, b.King, b.Knight, b.Bishop, b.Rook, b.Queen)) and not white_to_move):
                 Frontend.show_legal_move_indicators(button)
         
-    def move(check_piece, piece: Button):
+    def move(check_piece, dest: Button):
         global selected
         global tempBackground_color
         global white_to_move
+        global white_king_moved, white_krook_moved, white_qrook_moved, black_king_moved, black_krook_moved, black_qrook_moved
+        row = math.floor((int(check_piece.text)-1)/8)
+        file = (int(check_piece.text)-1)%8
+        pieceType = piecesLayout[row][file]
+
         moves = Backend.legal_moves(check_piece)
         moves_otherformat = [m[0:4] for m in moves]
         i1 = int(selected.text)-1
-        i2 = int(piece.text)-1
+        i2 = int(dest.text)-1
         move_from = f'0{i1}' if i1<10 else str(i1)
         move_to = f'0{i2}' if i2<10 else str(i2)
         move = move_from + move_to
         if moves:
             if move in moves_otherformat:
-                piece.image.source = selected.image.source 
-                selected.image.source = os.path.dirname(__file__) + "\\data\\img\\empty.png"
+                movee = moves[moves_otherformat.index(move)]
+                if movee[4] == 'e':
+                    pass
+                elif movee[4] == 'k':
+                    movement = pieceType.movement[1][0]
+                    dest = board[8*(row+movement[1])+(file+movement[0])]
+                    dest.image.source = check_piece.image.source
+                    check_piece.image.source = os.path.dirname(__file__) + "\\data\\img\\empty.png"
+                    movement = pieceType.movement[1][1]
+                    rook = board[8*(row+movement[1])+(file+movement[0])]
+                    board[8*(row)+(file+1)].image.source = rook.image.source
+                    rook.image.source = os.path.dirname(__file__) + "\\data\\img\\empty.png"
+                elif movee[4] == 'q':
+                    movement = pieceType.movement[0][0]
+                    dest = board[8*(row+movement[1])+(file+movement[0])]
+                    dest.image.source = check_piece.image.source
+                    check_piece.image.source = os.path.dirname(__file__) + "\\data\\img\\empty.png"
+                    movement = pieceType.movement[0][1]
+                    rook = board[8*(row+movement[1])+(file+movement[0])]
+                    board[8*(row)+(file-1)].image.source = rook.image.source
+                    rook.image.source = os.path.dirname(__file__) + "\\data\\img\\empty.png"
+                else:
+                    dest.image.source = selected.image.source 
+                    selected.image.source = os.path.dirname(__file__) + "\\data\\img\\empty.png"
                 selected.background_color = tempBackground_color
                 selected = None
                 white_to_move = not white_to_move
+                # Check if rook or king has moved
+                if isinstance(pieceType, w.King) and not white_king_moved:
+                    white_king_moved = True
+                elif isinstance(pieceType, b.King) and not black_king_moved:
+                    black_king_moved = True
+                elif isinstance(pieceType, w.Rook):
+                    if file == 0 and not white_qrook_moved:
+                        white_qrook_moved = True
+                    elif file == 7 and not white_krook_moved:
+                        white_krook_moved = True
+                elif isinstance(pieceType, b.Rook):
+                    if file == 0 and not black_qrook_moved:
+                        black_qrook_moved = True
+                    elif file == 7 and not black_krook_moved:
+                        black_krook_moved = True
                 Backend.update_pieces_layout()
                 Backend.update_bitboards()
                 Frontend.clear_legal_moves_indicators()
