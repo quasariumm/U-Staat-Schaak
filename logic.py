@@ -1,4 +1,7 @@
 import math,os
+from collections import Counter
+from copy import deepcopy
+
 from pieces import White as w
 from pieces import Black as b
 from kivy.utils import get_color_from_hex
@@ -11,6 +14,7 @@ from pieces import Black as b
 selected : Button = None
 tempBackground_color = []
 white_to_move = True
+legal_moves_cache = None
 
 # Castling requirements
 white_krook_moved = False
@@ -48,7 +52,7 @@ class Frontend():
         global selected
         global tempBackground_color
         global white_to_move
-        row, file = Utils.index_to_rowfile(button)
+        row, file = Utils.button_to_rowfile(button)
 
         if selected != None :
             if selected != button:
@@ -86,10 +90,11 @@ class Frontend():
         global white_to_move
         global check, white_king_index, black_king_index
         global white_king_moved, white_krook_moved, white_qrook_moved, black_king_moved, black_krook_moved, black_qrook_moved
-        row, file = Utils.index_to_rowfile(check_piece)
+        global legal_moves_cache
+        row, file = Utils.button_to_rowfile(check_piece)
         pieceType = piecesLayout[row][file]
 
-        moves = Backend.legal_moves(check_piece)
+        moves = legal_moves_cache
         moves_otherformat = [m[0:4] for m in moves]
         i1 = int(selected.text)-1
         i2 = int(dest.text)-1
@@ -127,11 +132,11 @@ class Frontend():
                 white_to_move = not white_to_move
                 # Check if rook or king has moved
                 if isinstance(pieceType, w.King):
-                    white_king_index = Utils.rowfile_to_index(row, file)
+                    white_king_index = int(dest.text)-1
                     if not white_king_moved:
                         white_king_moved = True
                 elif isinstance(pieceType, b.King):
-                    black_king_index = Utils.rowfile_to_index(row, file)
+                    black_king_index = int(dest.text)-1
                     if not black_king_moved:
                         black_king_moved = True
                 elif isinstance(pieceType, w.Rook):
@@ -146,14 +151,19 @@ class Frontend():
                         black_krook_moved = True
                 Backend.update_pieces_layout()
                 Backend.update_bitboards()
-                check = Backend.check_check(dest, black_king_index if white_to_move else white_king_index)
+                check = Backend.check_check(white_king_index if white_to_move else black_king_index, white_to_move)
+                print('check' if check else 'not check')
+                mate = Backend.check_mate(white_king_index if white_to_move else black_king_index, white_to_move)
+                print('mate' if mate else 'not mate')
                 Frontend.clear_legal_moves_indicators()
                 return 200
             else:
                 return 404
 
     def show_legal_move_indicators(button):
-        moves = Backend.legal_moves(button)
+        global legal_moves_cache
+        moves = Backend.legal_moves(button=button)
+        legal_moves_cache = moves
         if moves:
             for move in moves:
                 board[int(move[2:4])].background_normal = os.path.dirname(__file__) + '\\data\\img\\legal_capture.png'
@@ -168,12 +178,19 @@ class Backend():
     #   2 chars    2 chars  1 char
     # <index from><index to><type>
     # Types:
-    # 'n' - normal/capture
+    # 'n' - normal
+    # 'c' - capture
     # 'e' - en passant
     # 'k' or 'q' - King- or Queenside castling
-    def legal_moves(button):
-        global check
-        row, file = Utils.index_to_rowfile(button)
+    def legal_moves(button:Button=None, rowfile:tuple=None, src:str=None, check_check=False):
+        global check, piecesLayout, white_to_move
+        if button:
+            row, file = Utils.button_to_rowfile(button)
+            colorstr = button.image.source[-7]
+        else:
+            row, file = rowfile
+            colorstr = src[-7]
+
         pieceType = piecesLayout[row][file]
         legalmoves = []
 
@@ -184,18 +201,19 @@ class Backend():
             # Capture
             try:
                 if (piecesLayout[row+pieceType.movement[2][0][1]][file+pieceType.movement[2][0][0]] != None):
-                    if (button.image.source[-7] == 'b' and issubclass(type(piecesLayout[tmpRow][tmpFile]), (w.Pawn, w.King, w.Knight, w.Bishop, w.Rook, w.Queen)))\
-                    or (button.image.source[-7] == 'w' and issubclass(type(piecesLayout[tmpRow][tmpFile]), (b.Pawn, b.King, b.Knight, b.Bishop, b.Rook, b.Queen))):
-                        legalmoves.append([pieceType.movement[2][0], 'n'])
+                    if (colorstr == 'b' and issubclass(type(piecesLayout[tmpRow][tmpFile]), (w.Pawn, w.King, w.Knight, w.Bishop, w.Rook, w.Queen)))\
+                    or (colorstr == 'w' and issubclass(type(piecesLayout[tmpRow][tmpFile]), (b.Pawn, b.King, b.Knight, b.Bishop, b.Rook, b.Queen))):
+                        legalmoves.append([pieceType.movement[2][0], 'c'])
                 elif (piecesLayout[row+pieceType.movement[3][0][1]][file+pieceType.movement[3][0][0]] != None):
-                    if (button.image.source[-7] == 'b' and issubclass(type(piecesLayout[tmpRow][tmpFile]), (w.Pawn, w.King, w.Knight, w.Bishop, w.Rook, w.Queen)))\
-                    or (button.image.source[-7] == 'w' and issubclass(type(piecesLayout[tmpRow][tmpFile]), (b.Pawn, b.King, b.Knight, b.Bishop, b.Rook, b.Queen))):
-                        legalmoves.append([pieceType.movement[3][0], 'n'])
+                    if (colorstr == 'b' and issubclass(type(piecesLayout[tmpRow][tmpFile]), (w.Pawn, w.King, w.Knight, w.Bishop, w.Rook, w.Queen)))\
+                    or (colorstr == 'w' and issubclass(type(piecesLayout[tmpRow][tmpFile]), (b.Pawn, b.King, b.Knight, b.Bishop, b.Rook, b.Queen))):
+                        legalmoves.append([pieceType.movement[3][0], 'c'])
             except:
                 pass # Probably IndexError
-            # First move
+            # First move (only if no piece is in the way of the normal move)
             if (isinstance(pieceType, w.Pawn) and row == 1) or (isinstance(pieceType, b.Pawn) and row == 6):
-                if piecesLayout[row + pieceType.movement[0][0][1]][file] == None:
+                if piecesLayout[row + pieceType.movement[0][0][1]][file] == None\
+                and piecesLayout[row + pieceType.movement[1][0][1]][file] == None:
                     legalmoves.append([pieceType.movement[0][0], 'n']) # First move
             # If nothing is blocking, add the normal move
             if piecesLayout[row + pieceType.movement[1][0][1]][file] == None:
@@ -222,11 +240,12 @@ class Backend():
                 tmpRow = row + tmpmove[1]
                 tmpFile = file + tmpmove[0]
                 if not (tmpRow > 7 or tmpRow < 0 or tmpFile > 7 or tmpFile < 0):
-                    if (piecesLayout[tmpRow][tmpFile] == None)\
-                    or (button.image.source[-7] == 'b' and issubclass(type(piecesLayout[tmpRow][tmpFile]), (w.Pawn, w.King, w.Knight, w.Bishop, w.Rook, w.Queen)))\
-                    or (button.image.source[-7] == 'w' and issubclass(type(piecesLayout[tmpRow][tmpFile]), (b.Pawn, b.King, b.Knight, b.Bishop, b.Rook, b.Queen))):
-                        king_moves.append([tmpmove,'n'])
-            legalmoves = Backend.check_king_legal_moves(king_moves, pieceType)
+                    if (piecesLayout[tmpRow][tmpFile] == None):
+                        king_moves.append([tmpmove, 'n'])
+                    if (colorstr == 'b' and issubclass(type(piecesLayout[tmpRow][tmpFile]), (w.Pawn, w.King, w.Knight, w.Bishop, w.Rook, w.Queen)))\
+                    or (colorstr == 'w' and issubclass(type(piecesLayout[tmpRow][tmpFile]), (b.Pawn, b.King, b.Knight, b.Bishop, b.Rook, b.Queen))):
+                        king_moves.append([tmpmove, 'c'])
+            return Backend.check_king_legal_moves(Backend.format_legal_moves(king_moves, row, file), pieceType)
         else:
             for direction in pieceType.movement:
                 for option in direction:
@@ -237,22 +256,42 @@ class Backend():
                     else:
                         if (piecesLayout[tmpRow][tmpFile] == None):
                             legalmoves.append([option, 'n'])
-                        elif (button.image.source[-7] == 'b' and issubclass(type(piecesLayout[tmpRow][tmpFile]), (w.Pawn, w.King, w.Knight, w.Bishop, w.Rook, w.Queen)))\
-                        or (button.image.source[-7] == 'w' and issubclass(type(piecesLayout[tmpRow][tmpFile]), (b.Pawn, b.King, b.Knight, b.Bishop, b.Rook, b.Queen))):
-                            legalmoves.append([option, 'n'])
+                        elif (colorstr == 'b' and issubclass(type(piecesLayout[tmpRow][tmpFile]), (w.Pawn, w.King, w.Knight, w.Bishop, w.Rook, w.Queen)))\
+                        or (colorstr == 'w' and issubclass(type(piecesLayout[tmpRow][tmpFile]), (b.Pawn, b.King, b.Knight, b.Bishop, b.Rook, b.Queen))):
+                            legalmoves.append([option, 'c'])
                             break
                         else:
                             break
+
         if len(legalmoves) > 0:
-            well_formatted = []
-            for el in legalmoves:
-                move = el[0]
-                moveType = el[1]
-                i = 8*(row+move[1]) + (file+move[0])
-                move_from = f'0{8*row+file}' if 8*row+file<10 else str(8*row+file)
-                move_to = f'0{i}' if i<10 else str(i)
-                well_formatted.append(move_from + move_to + moveType)
-            return well_formatted
+            legalmoves = Backend.format_legal_moves(legalmoves, row, file)
+        
+        # If the king is in check, only accept moves that lead the king into not being checked anymore
+        # If the remaining list is empty, it's mate
+        if legalmoves and not check_check:
+            legalmovescopy = deepcopy(legalmoves)
+            for move in legalmoves:
+                mrow, mfile = Utils.index_to_rowfile(int(move[2:4]))
+                tmpPiecesLayout = deepcopy(piecesLayout)
+                piecesLayout[row][file] = None
+                piecesLayout[mrow][mfile] = pieceType
+                tstcheck = Backend.check_check(white_king_index if white_to_move else black_king_index, white_to_move)
+                piecesLayout = deepcopy(tmpPiecesLayout)
+                if tstcheck:
+                    legalmovescopy.remove(move)
+            legalmoves = deepcopy(legalmovescopy)
+        return legalmoves
+    
+    def format_legal_moves(legalmoves, row, file):
+        well_formatted = []
+        for el in legalmoves:
+            move = el[0]
+            moveType = el[1]
+            i = 8*(row+move[1]) + (file+move[0])
+            move_from = f'0{8*row+file}' if 8*row+file<10 else str(8*row+file)
+            move_to = f'0{i}' if i<10 else str(i)
+            well_formatted.append(move_from + move_to + moveType)
+        return well_formatted
     
     def black_and_white_pieces_list():
         white_pieces = []
@@ -265,41 +304,83 @@ class Backend():
                     black_pieces.append(board[8*i+j])
         return white_pieces, black_pieces
     
-    # This function is called after every move, because checking it during the legal move calculation is just a bit too much work.
-    def check_check(piece, king_index):
-        moves = Backend.legal_moves(piece)
-        if moves:
-            if king_index in [int(m[2:4]) for m in moves]:
-                return True
+    def check_check(king_index, white_move):
+        global piecesLayout
+        white_pieces, black_pieces = Backend.black_and_white_pieces_list()
+        for piece in (black_pieces if white_move else white_pieces):
+            row, file = Utils.button_to_rowfile(piece)
+            if not issubclass(type(piecesLayout[row][file]), (w.King, b.King)):
+                moves = Backend.legal_moves(button=piece, check_check=True)
+                if moves:
+                    if king_index in [int(m[2:4]) for m in moves]:
+                        return True
+        return False
+
+    # TODO: wrong result with scholar's mate
+    def check_mate(king_index, white_move):
+        has_legal_moves = []
+        white_pieces, black_pieces = Backend.black_and_white_pieces_list()
+        for piece in (white_pieces if white_move else black_pieces):
+            moves = Backend.legal_moves(button=piece)
+            if moves:
+                has_legal_moves.append(True)
+        if check and len(has_legal_moves) == 0:
+            return True
         return False
     
-    def check_king_legal_moves(moves_list:list, pieceType):
-        white_pieces, black_pieces = Backend.black_and_white_pieces_list()
-        if isinstance(pieceType, w.King):
-            for piece in black_pieces:
-                if isinstance(piece, b.King):
-                    continue
-                moves = Backend.legal_moves(piece)
-                if moves:
-                    # TODO: TypeError: 'NoneType' object is not iterable
-                    intersection = [i for i,j in zip(moves_list, moves) if i == j]
-                    if intersection:
-                        for m in intersection:
-                            moves_list.remove(m)
-        else:
-            for piece in white_pieces:
-                if isinstance(piece, w.King):
-                    continue
-                moves = Backend.legal_moves(piece)
-                intersection = [i for i,j in zip(moves_list, moves) if i == j]
+    def reduce_king_legal_moves(pieces, moves_list, moves_dict, reduced):
+        for piece in pieces:
+            row, file = Utils.button_to_rowfile(piece)
+            if (isinstance(piecesLayout[row][file], w.King) and white_to_move)\
+            or (isinstance(piecesLayout[row][file], b.King) and not white_to_move):
+                continue
+            moves = Backend.legal_moves(button=piece)
+            if moves:
+                moves = [m[2:4] for m in moves]
+                intersection = [i for i,j in Counter(moves + reduced).items() if j > 1]
                 if intersection:
                     for m in intersection:
-                        moves_list.remove(m)
+                        reduced.remove(m)
+                        moves_list.remove(moves_dict[m])
+                        del moves_dict[m]
+        return moves_list
+    
+    def check_king_legal_moves(moves_list:list, pieceType):
+        global piecesLayout
+        white_pieces, black_pieces = Backend.black_and_white_pieces_list()
+        if moves_list:
+            reduced_moves_list = [m[2:4] for m in moves_list]
+            moves_dict = {key: value for key, value in zip(reduced_moves_list, moves_list)}
+            pieces_list = black_pieces if isinstance(pieceType, w.King) else white_pieces
+            moves_list = Backend.reduce_king_legal_moves(pieces_list, moves_list, moves_dict, reduced_moves_list)
+        if (isinstance(pieceType, w.King) and not white_to_move)\
+        or (isinstance(pieceType, b.King) and white_to_move):
+            return moves_list
         # Check if the king can capture any of the opponent's piece
         # If so, look at that situation and look if a piece of the opponent can capture your king
         # If that is the case, the king can't capture said piece
+        krow, kfile = Utils.index_to_rowfile(white_king_index if white_to_move else black_king_index)
+        moves_listcopy = deepcopy(moves_list)
+        for m in moves_list:
+            button = board[int(m[2:4])]
+            row, file = Utils.button_to_rowfile(button)
+            if (button.image.source[-7] == 'b' and isinstance(pieceType, w.King))\
+            or (button.image.source[-7] == 'w' and isinstance(pieceType, b.King)):
+                for piece in (black_pieces if isinstance(pieceType, w.King) else white_pieces):
+                    if (isinstance(piecesLayout[row][file], w.King) and white_to_move)\
+                    or (isinstance(piecesLayout[row][file], b.King) and not white_to_move):
+                        continue
+                    tmpPiecesLayout = deepcopy(piecesLayout)
+                    piecesLayout[krow][kfile] = None
+                    piecesLayout[row][file] = w.King() if white_to_move else b.King()
+                    moves = Backend.legal_moves(piece)
+                    piecesLayout = deepcopy(tmpPiecesLayout)
+                    if not moves:
+                        continue
+                    if (white_king_index if isinstance(pieceType, w.King) else black_king_index) in [int(n[2:4]) for n in moves]:
+                        moves_listcopy.remove(m)
 
-        return moves_list
+        return deepcopy(moves_listcopy)
 
     def update_bitboards():
         global white_bishop_bitboard, white_king_bitboard, white_knight_bitboard, white_pawn_bitboard, white_queen_bitboard, white_rook_bitboard, black_bishop_bitboard, black_king_bitboard, black_knight_bitboard, black_pawn_bitboard, black_queen_bitboard, black_rook_bitboard
@@ -372,8 +453,11 @@ class Utils():
     def switch_bit_on(board, i):
         return board | 2**i
 
-    def index_to_rowfile(button):
+    def button_to_rowfile(button):
         return math.floor((int(button.text)-1)/8), (int(button.text)-1)%8
+
+    def index_to_rowfile(i):
+        return math.floor(i/8), i%8
     
     def rowfile_to_index(row, file):
         return 8*row+file

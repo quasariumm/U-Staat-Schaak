@@ -1,4 +1,5 @@
 from kivymd.app import MDApp
+from kivy.config import Config
 from kivy.lang.builder import Builder
 from kivy.graphics import *
 from kivymd.uix.screen import MDScreen
@@ -13,6 +14,8 @@ from pieces import White as w
 from pieces import Black as b
 
 import logic
+
+Config.set('input', 'mouse', 'mouse,disable_multitouch')
 
 board_prim = "#795C34"
 board_sec = "#E4D9CA"
