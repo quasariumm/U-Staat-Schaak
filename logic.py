@@ -153,8 +153,9 @@ class Frontend():
                 Backend.update_bitboards()
                 check = Backend.check_check(white_king_index if white_to_move else black_king_index, white_to_move)
                 print('check' if check else 'not check')
-                mate = Backend.check_mate(white_king_index if white_to_move else black_king_index, white_to_move)
-                print('mate' if mate else 'not mate')
+                if check:
+                    mate = Backend.check_mate(white_king_index if white_to_move else black_king_index, white_to_move)
+                    print('mate' if mate else 'not mate')
                 Frontend.clear_legal_moves_indicators()
                 return 200
             else:
