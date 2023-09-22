@@ -202,14 +202,14 @@ class Backend():
             # Capture
             try:
                 if (piecesLayout[row+pieceType.movement[2][0][1]][file+pieceType.movement[2][0][0]] != None):
-                    if (colorstr == 'b' and issubclass(type(piecesLayout[tmpRow][tmpFile]), (w.Pawn, w.King, w.Knight, w.Bishop, w.Rook, w.Queen)))\
-                    or (colorstr == 'w' and issubclass(type(piecesLayout[tmpRow][tmpFile]), (b.Pawn, b.King, b.Knight, b.Bishop, b.Rook, b.Queen))):
+                    if (colorstr == 'b' and issubclass(type(piecesLayout[row+pieceType.movement[2][0][1]][file+pieceType.movement[2][0][0]]), (w.Pawn, w.King, w.Knight, w.Bishop, w.Rook, w.Queen)))\
+                    or (colorstr == 'w' and issubclass(type(piecesLayout[row+pieceType.movement[2][0][1]][file+pieceType.movement[2][0][0]]), (b.Pawn, b.King, b.Knight, b.Bishop, b.Rook, b.Queen))):
                         legalmoves.append([pieceType.movement[2][0], 'c'])
                 if (piecesLayout[row+pieceType.movement[3][0][1]][file+pieceType.movement[3][0][0]] != None):
-                    if (colorstr == 'b' and issubclass(type(piecesLayout[tmpRow][tmpFile]), (w.Pawn, w.King, w.Knight, w.Bishop, w.Rook, w.Queen)))\
-                    or (colorstr == 'w' and issubclass(type(piecesLayout[tmpRow][tmpFile]), (b.Pawn, b.King, b.Knight, b.Bishop, b.Rook, b.Queen))):
+                    if (colorstr == 'b' and issubclass(type(piecesLayout[row+pieceType.movement[3][0][1]][file+pieceType.movement[3][0][0]]), (w.Pawn, w.King, w.Knight, w.Bishop, w.Rook, w.Queen)))\
+                    or (colorstr == 'w' and issubclass(type(piecesLayout[row+pieceType.movement[3][0][1]][file+pieceType.movement[3][0][0]]), (b.Pawn, b.King, b.Knight, b.Bishop, b.Rook, b.Queen))):
                         legalmoves.append([pieceType.movement[3][0], 'c'])
-            except:
+            except Exception as e:
                 pass # Probably IndexError
             # First move (only if no piece is in the way of the normal move)
             if (isinstance(pieceType, w.Pawn) and row == 1) or (isinstance(pieceType, b.Pawn) and row == 6):
