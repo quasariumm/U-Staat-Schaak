@@ -1,4 +1,4 @@
-import math,os
+import math,os,time
 from pieces import White as w
 from pieces import Black as b
 from kivy.utils import get_color_from_hex
@@ -7,7 +7,7 @@ from kivy.uix.button import Button
 from app import board_prim, board, piecesLayout
 from pieces import White as w
 from pieces import Black as b
-
+from threading import Thread
 selected : Button = None
 tempBackground_color = []
 white_to_move = True
@@ -154,7 +154,25 @@ class Frontend():
         for square in board:
             square.background_normal = ''
             square.background_down = ''
-
+class Clock(): 
+    def __init__(self) -> None:
+        self.starttime = time.time()
+        self.totaltime = 0
+        self.started = False
+    def clock(self,t):
+        while self.totaltime<t and self.started:
+            self.totaltime = round((time.time() - self.starttime), 2)
+            mins, secs = math.ceil((t-self.totaltime+1)/60)-1, math.ceil(t-self.totaltime)%60
+            timeformat= '{:02d}:{:02d}'.format(mins,secs)
+            print(timeformat, end='\r')   
+    
+    def toggle(self,t):
+        if not self.started:
+            self.starttime = time.time()- self.totaltime
+            self.started = True
+            Thread(target= self.clock, args= [t]).start()
+        else:
+            self.started = False
 class Backend():
     # NOTE: Legal move format
     #   2 chars    2 chars  1 char
@@ -309,3 +327,15 @@ class Backend():
             file = (int(square.text)-1)%8
             piecesLayout[row][file]= piece
 
+class Utils():
+    def switch_bit_on(board, i):
+        return board | 2**i
+
+    def button_to_rowfile(button):
+        return math.floor((int(button.text)-1)/8), (int(button.text)-1)%8
+
+    def index_to_rowfile(i):
+        return math.floor(i/8), i%8
+    
+    def rowfile_to_index(row, file):
+        return 8*row+file

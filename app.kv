@@ -39,7 +39,7 @@
             size_hint_y: 1
             size_hint_x: 0.25
             MDFillRoundFlatIconButton:
-                text: "10:00"
+                text: root.timeformat
                 disabled: True
                 background_color: hex("#ffffff")
                 disabled_color: hex("#ffffff")
@@ -50,7 +50,7 @@
                 size_hint_x: .35
                 pos_hint: {"top": 1-((self.parent.parent.height-board.height)/2)/self.parent.parent.height}
             MDFillRoundFlatIconButton:
-                text: "10:00"
+                text: root.timeformat
                 background_color: hex("#ffffff")
                 disabled_color: hex("#ffffff")
                 disabled: True

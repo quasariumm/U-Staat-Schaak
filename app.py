@@ -18,7 +18,9 @@ board_prim = "#795C34"
 board_sec = "#E4D9CA"
 
 board = [None] * 64
-
+time_control = 600
+w_clock = logic.Clock()
+b_clock = logic.Clock()
 #                                                        .::.
 #                                             _()_       _::_
 #                                   _O      _/____\_   _/____\_
