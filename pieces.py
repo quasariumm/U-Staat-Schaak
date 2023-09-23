@@ -98,8 +98,8 @@ class White():
             self.movement = [
                 [(0,2)], # First move
                 [(0,1)], # Normal
-                [(1,1)], # Capture left
-                [(-1,1)] # Capture right
+                [(1,1)], # Capture right
+                [(-1,1)] # Capture left
             ]
         
         def __add__(self, other):
@@ -203,8 +203,8 @@ class Black():
             self.movement = [
                 [(0,-2)], # First move
                 [(0,-1)], # Normal
-                [(1,-1)], # Capture left
-                [(-1,-1)] # Capture right
+                [(1,-1)], # Capture right
+                [(-1,-1)] # Capture left
             ]
         
         def __add__(self, other):

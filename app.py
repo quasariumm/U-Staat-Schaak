@@ -3,11 +3,12 @@ from kivy.config import Config
 from kivy.lang.builder import Builder
 from kivy.graphics import *
 from kivymd.uix.screen import MDScreen
-from kivymd.uix.gridlayout import MDGridLayout
+from kivymd.uix.gridlayout import MDGridLayout, GridLayout
 from kivy.uix.button import Button
 from kivymd.uix.list import MDList, OneLineListItem
 from kivymd.uix.scrollview import MDScrollView
 from kivy.utils import get_color_from_hex
+from kivy.core.window import Window
 import os, math, time
 
 from pieces import White as w
@@ -77,13 +78,38 @@ class ChessBoardSquare(Button):
     def pressAction(button):
         logic.Frontend.square_press_action(button)
 
+class ChessPromotionPiece(Button):
+    def pressAction(button):
+        logic.promotionStatus = 1
+        logic.promotionEvent.set()
+        logic.promotionType = button.text
+
+class ChessPromotionUI(GridLayout):
+    def change_color(self, pieceType):
+        if issubclass(type(pieceType), (w.Pawn, w.King, w.Knight, w.Bishop, w.Rook, w.Queen)):
+            for el in self.children:
+                if isinstance(el, Button):
+                    el.image.source = os.path.dirname(__file__) + f"\\data\\img\\pieces\\Default\\w{el.text}n.png"
+        else:
+            for el in self.children:
+                if isinstance(el, Button):
+                    el.image.source = os.path.dirname(__file__) + f"\\data\\img\\pieces\\Default\\b{el.text}n.png"
+    
+    def cancel(*args):
+        logic.promotionStatus = 2
+        logic.promotionEvent.set()
+
 class MovesList(MDList):
     pass
 
 class ChessApp(MDApp):
+    def exit_promotion(*args):
+        logic.promotionStatus = 2
+        logic.promotionEvent.set()
+
     def build(self):
         self.theme_cls.theme_style = 'Dark'
-
+        Window.bind(on_request_close=self.exit_promotion)
         return Builder.load_file(os.path.dirname(__file__) + '\\app.kv')        
 
 if __name__ == "__main__":

@@ -1,13 +1,15 @@
-import math,os
+import math,os, time
 from collections import Counter
 from copy import deepcopy
+from threading import Thread, Event
 
 from pieces import White as w
 from pieces import Black as b
 from kivy.utils import get_color_from_hex
 from kivy.uix.button import Button
+from kivy.uix.popup import Popup
 
-from app import board_prim, board, piecesLayout
+from app import board_prim, board, piecesLayout, ChessPromotionUI
 from pieces import White as w
 from pieces import Black as b
 
@@ -46,6 +48,13 @@ black_bishop_bitboard = 0x0000000000000000
 black_knight_bitboard = 0x0000000000000000
 black_rook_bitboard = 0x0000000000000000
 black_pawn_bitboard = 0x0000000000000000
+
+# Moves format: {<algebraic chess notation>: move with indecies}
+# ex. {'e4': '1228n'}
+moves_list = {}
+promotionStatus = 0
+promotionType = ''
+promotionEvent = Event()
 
 class Frontend():
     def square_press_action(button):
@@ -92,6 +101,17 @@ class Frontend():
         global white_king_moved, white_krook_moved, white_qrook_moved, black_king_moved, black_krook_moved, black_qrook_moved
         global legal_moves_cache
         row, file = Utils.button_to_rowfile(check_piece)
+        destrow, _ = Utils.button_to_rowfile(dest)
+        if destrow == 7 and white_to_move or destrow == 0 and not white_to_move:
+            # Show the promotion GUI
+            promoteUI = ChessPromotionUI()
+            # TODO: Content not displaying
+            popup = Popup(title='Select piece type', content=promoteUI, size_hint=(0.25, 0.35))
+            promoteUI.change_color(piecesLayout[row][file])
+            popup.bind(on_dismiss=promoteUI.cancel)
+            popup.open()
+            Thread(target=Frontend.promotionMove, args=[check_piece, dest, popup]).start()
+            return 200
         pieceType = piecesLayout[row][file]
 
         moves = legal_moves_cache
@@ -160,6 +180,50 @@ class Frontend():
                 return 200
             else:
                 return 404
+    
+    def reset_event():
+        global promotionStatus, promotionEvent
+        promotionEvent.clear()
+        promotionStatus = 0
+    
+    def promotionMove(check_piece, dest:Button, popup:Popup):
+        global selected
+        global tempBackground_color
+        global white_to_move
+        global legal_moves_cache
+        global promotionStatus, promotionEvent
+        promotionEvent.wait()
+        if promotionStatus == 2:
+            popup.dismiss()
+            Frontend.reset_event()
+            return 418
+        popup.dismiss()
+        Frontend.reset_event()
+        moves = legal_moves_cache
+        moves_otherformat = [m[0:4] for m in moves]
+        i1 = int(selected.text)-1
+        i2 = int(dest.text)-1
+        move_from = f'0{i1}' if i1<10 else str(i1)
+        move_to = f'0{i2}' if i2<10 else str(i2)
+        move = move_from + move_to
+        if moves:
+            if move in moves_otherformat:
+                dest.image.source = os.path.dirname(__file__) + f"\\data\\img\\pieces\\Default\\{'w' if white_to_move else 'b'}{promotionType}n.png"
+                selected.image.source = os.path.dirname(__file__) + "\\data\\img\\empty.png"
+                selected.background_color = tempBackground_color
+                selected = None
+                white_to_move = not white_to_move
+                Backend.update_pieces_layout()
+                Backend.update_bitboards()
+                check = Backend.check_check(white_king_index if white_to_move else black_king_index, white_to_move)
+                print('check' if check else 'not check')
+                if check:
+                    mate = Backend.check_mate(white_king_index if white_to_move else black_king_index, white_to_move)
+                    print('mate' if mate else 'not mate')
+                Frontend.clear_legal_moves_indicators()
+                return 200
+        else:
+            return 404
 
     def show_legal_move_indicators(button):
         global legal_moves_cache
@@ -201,13 +265,15 @@ class Backend():
 
             # Capture
             try:
-                if (piecesLayout[row+pieceType.movement[2][0][1]][file+pieceType.movement[2][0][0]] != None):
-                    if (colorstr == 'b' and issubclass(type(piecesLayout[row+pieceType.movement[2][0][1]][file+pieceType.movement[2][0][0]]), (w.Pawn, w.King, w.Knight, w.Bishop, w.Rook, w.Queen)))\
-                    or (colorstr == 'w' and issubclass(type(piecesLayout[row+pieceType.movement[2][0][1]][file+pieceType.movement[2][0][0]]), (b.Pawn, b.King, b.Knight, b.Bishop, b.Rook, b.Queen))):
+                tmpRow, tmpFile = row+pieceType.movement[2][0][1], file+pieceType.movement[2][0][0]
+                if (piecesLayout[tmpRow][tmpFile] != None) and not (tmpRow > 7 or tmpRow < 0 or tmpFile > 7 or tmpFile < 0):
+                    if (colorstr == 'b' and issubclass(type(piecesLayout[tmpRow][tmpFile]), (w.Pawn, w.King, w.Knight, w.Bishop, w.Rook, w.Queen)))\
+                    or (colorstr == 'w' and issubclass(type(piecesLayout[tmpRow][tmpFile]), (b.Pawn, b.King, b.Knight, b.Bishop, b.Rook, b.Queen))):
                         legalmoves.append([pieceType.movement[2][0], 'c'])
-                if (piecesLayout[row+pieceType.movement[3][0][1]][file+pieceType.movement[3][0][0]] != None):
-                    if (colorstr == 'b' and issubclass(type(piecesLayout[row+pieceType.movement[3][0][1]][file+pieceType.movement[3][0][0]]), (w.Pawn, w.King, w.Knight, w.Bishop, w.Rook, w.Queen)))\
-                    or (colorstr == 'w' and issubclass(type(piecesLayout[row+pieceType.movement[3][0][1]][file+pieceType.movement[3][0][0]]), (b.Pawn, b.King, b.Knight, b.Bishop, b.Rook, b.Queen))):
+                tmpRow, tmpFile = row+pieceType.movement[3][0][1], file+pieceType.movement[3][0][0]
+                if (piecesLayout[tmpRow][tmpFile] != None) and not (tmpRow > 7 or tmpRow < 0 or tmpFile > 7 or tmpFile < 0):
+                    if (colorstr == 'b' and issubclass(type(piecesLayout[tmpRow][tmpFile]), (w.Pawn, w.King, w.Knight, w.Bishop, w.Rook, w.Queen)))\
+                    or (colorstr == 'w' and issubclass(type(piecesLayout[tmpRow][tmpFile]), (b.Pawn, b.King, b.Knight, b.Bishop, b.Rook, b.Queen))):
                         legalmoves.append([pieceType.movement[3][0], 'c'])
             except Exception as e:
                 pass # Probably IndexError
@@ -217,8 +283,11 @@ class Backend():
                 and piecesLayout[row + pieceType.movement[1][0][1]][file] == None:
                     legalmoves.append([pieceType.movement[0][0], 'n']) # First move
             # If nothing is blocking, add the normal move
-            if piecesLayout[row + pieceType.movement[1][0][1]][file] == None:
-                legalmoves.append([pieceType.movement[1][0], 'n'])
+            try:
+                if piecesLayout[row + pieceType.movement[1][0][1]][file] == None:
+                    legalmoves.append([pieceType.movement[1][0], 'n'])
+            except:
+                pass
         # King specific
         elif isinstance(pieceType, w.King) or isinstance(pieceType, b.King):
             king_moves = []

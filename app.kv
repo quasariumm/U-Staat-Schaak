@@ -73,6 +73,39 @@
         pos:self.parent.pos
         source:''
 
+<ChessPromotionPiece>:
+    background_normal: ""
+    background_down: ""
+    background_color: [1,1,1,0]
+    border: [0,0,0,0]
+    image:image
+    on_press: self.pressAction()
+    Image:
+        id:image
+        size:self.parent.size
+        pos:self.parent.pos
+        source:''
+        fit_mode: 'contain'
+
+<ChessPromotionUI>:
+    rows: 3
+    cols: 2
+    ChessPromotionPiece:
+        text: 'q'
+    ChessPromotionPiece:
+        text: 'r'
+    ChessPromotionPiece:
+        text: 'b'
+    ChessPromotionPiece:
+        text: 'n'
+    Widget:
+        Button:
+            text: 'Cancel'
+            pos: self.parent.pos
+            height: self.parent.height
+            width: self.parent.width * 2
+            on_press: self.parent.parent.cancel()
+
 <ChessBoard>:
     height: self.width
     size_hint: 0.5, None
