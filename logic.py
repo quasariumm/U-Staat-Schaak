@@ -1,4 +1,4 @@
-import math,os, time
+import math,os
 from collections import Counter
 from copy import deepcopy
 from threading import Thread, Event
@@ -12,6 +12,8 @@ from kivy.uix.popup import Popup
 from app import board_prim, board, piecesLayout, ChessPromotionUI
 from pieces import White as w
 from pieces import Black as b
+
+from bot import Calculations
 
 selected : Button = None
 tempBackground_color = []
@@ -27,6 +29,7 @@ black_qrook_moved = False
 black_king_moved = False
 
 check = False
+mate = False
 white_king_index = 4
 black_king_index = 60
 
@@ -97,11 +100,11 @@ class Frontend():
         global selected
         global tempBackground_color
         global white_to_move
-        global check, white_king_index, black_king_index
+        global check, mate, white_king_index, black_king_index
         global white_king_moved, white_krook_moved, white_qrook_moved, black_king_moved, black_krook_moved, black_qrook_moved
         global legal_moves_cache
         row, file = Utils.button_to_rowfile(check_piece)
-        destrow, _ = Utils.button_to_rowfile(dest)
+        destrow, destfile = Utils.button_to_rowfile(dest)
         if destrow == 7 and white_to_move or destrow == 0 and not white_to_move:
             # Show the promotion GUI
             promoteUI = ChessPromotionUI()
@@ -169,6 +172,18 @@ class Frontend():
                         black_qrook_moved = True
                     elif file == 7 and not black_krook_moved:
                         black_krook_moved = True
+                # If one of the rooks is captured, update the rook_moved values
+                # Otherwise the king can castle with a nonexistent rook
+                if isinstance(piecesLayout[destrow][destfile], w.Rook):
+                    if destfile == 0 and not white_qrook_moved:
+                        white_qrook_moved = True
+                    elif destfile == 7 and not white_krook_moved:
+                        white_krook_moved = True
+                elif isinstance(piecesLayout[destrow][destfile], b.Rook):
+                    if destfile == 0 and not black_qrook_moved:
+                        black_qrook_moved = True
+                    elif destfile == 7 and not black_krook_moved:
+                        black_krook_moved = True
                 Backend.update_pieces_layout()
                 Backend.update_bitboards()
                 check = Backend.check_check(white_king_index if white_to_move else black_king_index, white_to_move)
@@ -177,6 +192,9 @@ class Frontend():
                     mate = Backend.check_mate(white_king_index if white_to_move else black_king_index, white_to_move)
                     print('mate' if mate else 'not mate')
                 Frontend.clear_legal_moves_indicators()
+
+                # Just to test
+                print(Calculations.minimax(4, -math.inf, math.inf, True if white_to_move else False))
                 return 200
             else:
                 return 404
