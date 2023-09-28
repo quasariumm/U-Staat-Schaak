@@ -155,24 +155,31 @@ class Frontend():
             square.background_normal = ''
             square.background_down = ''
 class Clock(): 
-    def __init__(self) -> None:
+    def __init__(self, clock) -> None:
         self.starttime = time.time()
         self.totaltime = 0
         self.started = False
+        self.clockWidget = clock
+
     def clock(self,t):
         while self.totaltime<t and self.started:
             self.totaltime = round((time.time() - self.starttime), 2)
             mins, secs = math.ceil((t-self.totaltime+1)/60)-1, math.ceil(t-self.totaltime)%60
             timeformat= '{:02d}:{:02d}'.format(mins,secs)
-            print(timeformat, end='\r')   
+            self.clockWidget.text = timeformat
+            time.sleep(0.02)
+            print(timeformat, end='\r')
     
     def toggle(self,t):
+        print('stopping?')
         if not self.started:
-            self.starttime = time.time()- self.totaltime
+            self.starttime = time.time() - self.totaltime
             self.started = True
             Thread(target= self.clock, args= [t]).start()
         else:
             self.started = False
+        return
+
 class Backend():
     # NOTE: Legal move format
     #   2 chars    2 chars  1 char
