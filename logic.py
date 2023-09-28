@@ -13,7 +13,7 @@ from app import board_prim, board, piecesLayout, ChessPromotionUI
 from pieces import White as w
 from pieces import Black as b
 
-from bot import Calculations
+from bot import Calculations, WHITE
 
 selected : Button = None
 tempBackground_color = []
@@ -194,7 +194,7 @@ class Frontend():
                 Frontend.clear_legal_moves_indicators()
 
                 # Just to test
-                print(Calculations.minimax(4, -math.inf, math.inf, True if white_to_move else False))
+                print(Calculations.minimax(depth=4, alpha=-math.inf, beta=math.inf, max_player=True if white_to_move else False, max_color=WHITE))
                 return 200
             else:
                 return 404

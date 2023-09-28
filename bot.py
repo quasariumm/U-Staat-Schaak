@@ -1,4 +1,4 @@
-from logic import piecesLayout, white_to_move, mate, Backend, Utils
+import logic
 from pieces import White as w
 from pieces import Black as b
 
@@ -27,53 +27,52 @@ black_score = 0
 
 class Calculations():
     def minimax(depth:int, alpha:float, beta:float, max_player:bool, max_color:int):
-        if depth == 0 or mate:
+        if depth == 0 or logic.mate:
             return None, Calculations.evaluation(max_color)
         moves = Calculations.all_legal_moves()
-        best_move = random.choice(moves)
+        best_move = random.choice(list(moves.values()))
         if max_player:
             max_eval = -math.inf
             for pieceType, move in moves.items():
-                row, file = Utils.index_to_rowfile(int(move[2:4]))
-                mrow, mfile = Utils.index_to_rowfile(int(move[2:4]))
-                tmpPiecesLayout = deepcopy(piecesLayout)
-                piecesLayout[row][file] = None
-                piecesLayout[mrow][mfile] = pieceType
+                row, file = logic.Utils.index_to_rowfile(int(move[2:4]))
+                mrow, mfile = logic.Utils.index_to_rowfile(int(move[2:4]))
+                tmpPiecesLayout = deepcopy(logic.piecesLayout)
+                logic.piecesLayout[row][file] = None
+                logic.piecesLayout[mrow][mfile] = pieceType
                 current_eval = Calculations.minimax(depth-1, alpha, beta, False, max_color)
-                piecesLayout = deepcopy(tmpPiecesLayout)
-                if current_eval > max_eval:
-                    max_eval = current_eval
+                logic.piecesLayout = deepcopy(tmpPiecesLayout)
+                if current_eval[1] > max_eval:
+                    max_eval = current_eval[1]
                     best_move = move
-                alpha = max(alpha, current_eval)
+                alpha = max(alpha, current_eval[1])
                 if beta <= alpha:
                     break
             return best_move, max_eval
         else:
             max_eval = math.inf
             for pieceType, move in moves.items():
-                row, file = Utils.index_to_rowfile(int(move[2:4]))
-                mrow, mfile = Utils.index_to_rowfile(int(move[2:4]))
-                tmpPiecesLayout = deepcopy(piecesLayout)
-                piecesLayout[row][file] = None
-                piecesLayout[mrow][mfile] = pieceType
+                row, file = logic.Utils.index_to_rowfile(int(move[2:4]))
+                mrow, mfile = logic.Utils.index_to_rowfile(int(move[2:4]))
+                tmpPiecesLayout = deepcopy(logic.piecesLayout)
+                logic.piecesLayout[row][file] = None
+                logic.piecesLayout[mrow][mfile] = pieceType
                 current_eval = Calculations.minimax(depth-1, alpha, beta, True, max_color)
-                piecesLayout = deepcopy(tmpPiecesLayout)
-                if current_eval < max_eval:
-                    max_eval = current_eval
+                logic.piecesLayout = deepcopy(tmpPiecesLayout)
+                if current_eval[1] < max_eval:
+                    max_eval = current_eval[1]
                     best_move = move
-                beta = min(beta, current_eval)
+                beta = min(beta, current_eval[1])
                 if beta <= alpha:
                     break
-            print(piecesLayout)
             return best_move, max_eval
 
     def all_legal_moves():
-        white_pieces, black_pieces = Backend.black_and_white_pieces_list()
+        white_pieces, black_pieces = logic.Backend.black_and_white_pieces_list()
         moves = {}
-        for el in (white_pieces if white_to_move else black_pieces):
-            row, file = Utils.button_to_rowfile(el)
-            pieceType = piecesLayout[row][file]
-            moves += {pieceType: move for move in Backend.legal_moves(el)}
+        for el in (white_pieces if logic.white_to_move else black_pieces):
+            row, file = logic.Utils.button_to_rowfile(el)
+            pieceType = logic.piecesLayout[row][file]
+            moves.update({pieceType: move for move in logic.Backend.legal_moves(el)})
         return moves
 
     def calculate_score(layout):
