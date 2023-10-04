@@ -108,7 +108,6 @@ class Frontend():
         if destrow == 7 and white_to_move or destrow == 0 and not white_to_move:
             # Show the promotion GUI
             promoteUI = ChessPromotionUI()
-            # TODO: Content not displaying
             popup = Popup(title='Select piece type', content=promoteUI, size_hint=(0.25, 0.35))
             promoteUI.change_color(piecesLayout[row][file])
             popup.bind(on_dismiss=promoteUI.cancel)
@@ -194,10 +193,13 @@ class Frontend():
                 Frontend.clear_legal_moves_indicators()
 
                 # Just to test
-                print(Calculations.minimax(depth=4, alpha=-math.inf, beta=math.inf, max_player=True if white_to_move else False, max_color=WHITE))
+                Thread(target= lambda check=check: Calculations.minimax(depth=4, alpha=-math.inf, beta=math.inf, max_player=True if white_to_move else False, max_color=WHITE, check=check)).start()
                 return 200
             else:
                 return 404
+    
+    def test_bot_callback(result):
+        print(result)
     
     def reset_event():
         global promotionStatus, promotionEvent
@@ -404,7 +406,6 @@ class Backend():
                         return True
         return False
 
-    # TODO: wrong result with scholar's mate
     def check_mate(king_index, white_move):
         has_legal_moves = []
         white_pieces, black_pieces = Backend.black_and_white_pieces_list()
@@ -549,3 +550,28 @@ class Utils():
     
     def rowfile_to_index(row, file):
         return 8*row+file
+
+    def pretty_print_position():
+        pieces_unicode={
+            w.King: '♚',
+            w.Knight: '♞',
+            w.Pawn: '♟',
+            w.Queen: '♛',
+            w.Rook: '♜',
+            w.Bishop: '♝',
+            b.King: '♔',
+            b.Knight: '♘',
+            b.Pawn: '♙',
+            b.Queen: '♕',
+            b.Rook: '♖',
+            b.Bishop: '♗'
+        }
+        pretty = '-------------------------\n'
+        for row in piecesLayout:
+            for square in row:
+                if square:
+                    pretty += f'|{pieces_unicode[type(square)]} '
+                else:
+                    pretty += '|  '
+            pretty += '|\n-------------------------\n'
+        print(pretty)
