@@ -16,7 +16,7 @@ import logic
 
 board_prim = "#795C34"
 board_sec = "#E4D9CA"
-
+move_list = None
 board = [None] * 64
 
 #                                                        .::.
@@ -75,7 +75,14 @@ class ChessBoardSquare(Button):
         logic.Frontend.square_press_action(button)
 
 class MovesList(MDList):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        global move_list
+        move_list = self
+        self.bind(children=self.print_children)
+
+    def print_children(self, obj, value):
+        print(obj, value)
 
 class ChessApp(MDApp):
     def build(self):
