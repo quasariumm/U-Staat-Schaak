@@ -5,11 +5,12 @@ from kivy.utils import get_color_from_hex
 from kivy.uix.button import Button
 from kivymd.uix.list import OneLineListItem
 
-from app import board_prim, board, piecesLayout, move_list
+from app import board_prim, board, piecesLayout #, check, mate
 from pieces import White as w
 from pieces import Black as b
 
 movenum=0
+move_list = None
 list_items=[]
 
 
@@ -169,12 +170,28 @@ class Frontend():
         piece_types={w.Rook:'R', w.Knight:'N', w.Bishop:'B',w.Queen:'Q', w.King:'K', w.Pawn:'', b.Rook:'R', b.Knight:'N', b.Bishop:'B', b.Queen:'Q', b.King:'K', b.Pawn:''}
         row,file=Utils.button_to_rowfile(piece)
         piece_type=type(piecesLayout[row][file])
+        promote=''
+        last = ''
+        #TEMP
+        check, mate = False, False
         if move[-1]=='c' and piece_types[piece_type]=='': 
             _, sfile=Utils.index_to_rowfile(move[0:2])
-            first=file_letters=[sfile]
-        else: 
+            first=file_letters[sfile]
+        elif check:
+            last = '+'
+        elif mate:
+            last = '#'
+        elif move[-1]=='a':
+            promote='=Q'
+        elif move[-1]=='s':
+            promote='=R'
+        elif move[-1]=='d':
+            promote='=B'
+        elif move[-1]=='f':
+            promote='=N'
+        else:
             first=piece_types[piece_type]
-        newformat=f"{first}{'x' if move[-1]=='c' else ''}{file_letters[file]}{row+1}"
+        newformat=f"{first}{'x' if move[-1]=='c' else ''}{file_letters[file]}{row+1}{promote}{last}"
         print(newformat)
         if movenum%2==1:
             li=OneLineListItem(text=f"{math.ceil(movenum/2)}. {newformat}")

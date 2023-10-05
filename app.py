@@ -16,7 +16,6 @@ import logic
 
 board_prim = "#795C34"
 board_sec = "#E4D9CA"
-move_list = None
 board = [None] * 64
 
 #                                                        .::.
@@ -77,8 +76,8 @@ class ChessBoardSquare(Button):
 class MovesList(MDList):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        global move_list
-        move_list = self
+        logic.move_list = self
+        print(logic.move_list, self)
         self.bind(children=self.print_children)
 
     def print_children(self, obj, value):
@@ -88,7 +87,7 @@ class ChessApp(MDApp):
     def build(self):
         self.theme_cls.theme_style = 'Dark'
 
-        return Builder.load_file(os.path.dirname(__file__) + '\\app.kv')        
+        return Builder.load_file(os.path.dirname(__file__) + '\\app.kv')
 
 if __name__ == "__main__":
     app = ChessApp()
