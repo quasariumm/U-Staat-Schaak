@@ -193,7 +193,7 @@ class Frontend():
                 Frontend.clear_legal_moves_indicators()
 
                 # Just to test
-                Thread(target= lambda check=check: Calculations.minimax(depth=4, alpha=-math.inf, beta=math.inf, max_player=True if white_to_move else False, max_color=WHITE, check=check)).start()
+                Thread(target= lambda check=check: Calculations.minimax(depth=4, alpha=-math.inf, beta=math.inf, max_player=True if white_to_move else False, max_color=WHITE, check=check, begin_d=4)).start()
                 return 200
             else:
                 return 404
@@ -574,4 +574,4 @@ class Utils():
                 else:
                     pretty += '|  '
             pretty += '|\n-------------------------\n'
-        print(pretty)
+        print(pretty, end='\r')

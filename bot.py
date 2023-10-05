@@ -114,9 +114,8 @@ piece_square_tables = {
 }
 
 class Calculations():
-    # TODO: makes pawns out of nowhere
-    def minimax(depth:int, alpha:float, beta:float, max_player:bool, max_color:int, check:bool):
-        if depth == 0 or logic.mate:
+    def minimax(depth:int, alpha:float, beta:float, max_player:bool, max_color:int, check:bool, begin_d:int):
+        if depth == 0:
             return None, Calculations.evaluation(max_color)
         moves = Misc.all_legal_moves(max_player)
         if len(moves) == 0:
@@ -132,8 +131,9 @@ class Calculations():
                 tmpPiecesLayout = deepcopy(logic.piecesLayout)
                 logic.piecesLayout[row][file] = None
                 logic.piecesLayout[mrow][mfile] = pieceType
+                logic.Utils.pretty_print_position()
                 check = logic.Backend.check_check(logic.black_king_index, False)
-                current_eval = Calculations.minimax(depth-1, alpha, beta, False, -max_color, check=check)
+                current_eval = Calculations.minimax(depth-1, alpha, beta, False, -max_color, check=check, begin_d=begin_d)
                 logic.piecesLayout = deepcopy(tmpPiecesLayout)
                 if current_eval[1] > max_eval:
                     max_eval = current_eval[1]
@@ -142,8 +142,7 @@ class Calculations():
                 if beta <= alpha:
                     break
             # Test callback
-            logic.Frontend.test_bot_callback((best_move, max_eval))
-            return best_move, max_eval
+            #logic.Frontend.test_bot_callback((best_move, max_eval))
         else:
             max_eval = math.inf
             for pieceType, move in moves.items():
@@ -154,7 +153,7 @@ class Calculations():
                 logic.piecesLayout[mrow][mfile] = pieceType
                 logic.Utils.pretty_print_position()
                 check = logic.Backend.check_check(logic.white_king_index, True)
-                current_eval = Calculations.minimax(depth-1, alpha, beta, True, -max_color, check=check)
+                current_eval = Calculations.minimax(depth-1, alpha, beta, True, -max_color, check=check, begin_d=begin_d)
                 logic.piecesLayout = deepcopy(tmpPiecesLayout)
                 if current_eval[1] < max_eval:
                     max_eval = current_eval[1]
@@ -163,8 +162,10 @@ class Calculations():
                 if beta <= alpha:
                     break
             # Test callback
-            logic.Frontend.test_bot_callback((best_move, max_eval))
-            return best_move, max_eval
+            #logic.Frontend.test_bot_callback((best_move, max_eval))
+        if depth == begin_d:
+            print(best_move, max_eval)
+        return best_move, max_eval
 
     def calculate_score(layout):
         white_score, black_score = 0, 0
@@ -182,7 +183,6 @@ class Calculations():
         piecesTypesList:list = Misc.piecesTypesList()
         white_mat_nopawns = white_eval - piecesTypesList.count(w.Pawn) * weights[w.Pawn]
         black_mat_nopawns = black_eval - piecesTypesList.count(b.Pawn) * weights[b.Pawn]
-        print(f'Amount of pawns. White: {piecesTypesList.count(w.Pawn)}, black: {piecesTypesList.count(b.Pawn)}')
         whiteEndgamePhaseWeight = Calculations.endgameWeight(white_mat_nopawns)
         blackEndgamePhaseWeight = Calculations.endgameWeight(black_mat_nopawns)
 
@@ -190,8 +190,6 @@ class Calculations():
         black_eval += Calculations.evaluate_piece_square_tables(False, blackEndgamePhaseWeight)
         return (white_eval - black_eval)*color
 
-    # TODO: It should be [0,1]. Take start weight into account.
-    # Weight should be startWeight-weight/multiplier
     def endgameWeight(mat_nopawns):
         mat_less_than_start = MATERIAL_START - mat_nopawns
         mat_endgame_start = MATERIAL_START - ENDGAME_MATERIAL_START
