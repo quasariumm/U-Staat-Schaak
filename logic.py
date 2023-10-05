@@ -267,6 +267,11 @@ class Backend():
     # 'c' - capture
     # 'e' - en passant
     # 'k' or 'q' - King- or Queenside castling
+    # 'a' promote queen
+    # 's' promote rook
+    # 'd' promote bishop
+    # 'f' promote knight
+    # Don't pay much attention to the flags for promotion
     def legal_moves(button:Button=None, rowfile:tuple=None, src:str=None, check_check=False):
         global check, piecesLayout, white_to_move
         if button:
@@ -305,6 +310,11 @@ class Backend():
             # If nothing is blocking, add the normal move
             try:
                 if piecesLayout[row + pieceType.movement[1][0][1]][file] == None:
+                    # Check if the pawn can promote
+                    if (colorstr == 'w' and row == 7) or (colorstr == 'b' and row == 0):
+                        # Pawn can promote
+                        for protype in ['a', 's', 'd', 'f']:
+                            legalmoves.append([pieceType.movement[1][0], protype])
                     legalmoves.append([pieceType.movement[1][0], 'n'])
             except:
                 pass

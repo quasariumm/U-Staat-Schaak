@@ -212,6 +212,21 @@ class Calculations():
                 continue
             value += piece_square_tables[pieceType][index]
         return value
+    
+    def moveOrdering(moves):
+        # TODO: sort
+        moveScoreGuesses = {}
+        for move in moves:
+            moveScoreGuesses[move] = 0
+            row, file = logic.Utils.index_to_rowfile(int(move[0:2]))
+            mrow, mfile = logic.Utils.index_to_rowfile(int(move[2:4]))
+            pieceType = logic.piecesLayout[row][file]
+            movePieceType = logic.piecesLayout[mrow][mfile]
+            flag = move[-1]
+            if logic.piecesLayout[mrow][mfile]:
+                moveScoreGuesses[move] = 10 * weights[pieceType] - weights[movePieceType]
+            if flag in ['a', 's', 'd', 'f']:
+                moveScoreGuesses[move] += weights[w.Queen if flag == 'a' else w.Rook if flag == 's' else w.Bishop if flag == 'd' else w.Knight]
 
 class Misc():
     def all_legal_moves(max_player):
