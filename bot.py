@@ -1,4 +1,5 @@
 import logic
+import app
 from pieces import White as w
 from pieces import Black as b
 
@@ -118,6 +119,7 @@ class Calculations():
         if depth == 0:
             return None, Calculations.evaluation(max_color)
         moves = Misc.all_legal_moves(max_player)
+        moves = Calculations.moveOrdering(moves)
         if len(moves) == 0:
             if check:
                 return depth, math.inf * (WHITE if max_player else BLACK)
@@ -131,7 +133,7 @@ class Calculations():
                 tmpPiecesLayout = deepcopy(logic.piecesLayout)
                 logic.piecesLayout[row][file] = None
                 logic.piecesLayout[mrow][mfile] = pieceType
-                logic.Utils.pretty_print_position()
+                #logic.Utils.pretty_print_position()
                 check = logic.Backend.check_check(logic.black_king_index, False)
                 current_eval = Calculations.minimax(depth-1, alpha, beta, False, -max_color, check=check, begin_d=begin_d)
                 logic.piecesLayout = deepcopy(tmpPiecesLayout)
@@ -151,7 +153,7 @@ class Calculations():
                 tmpPiecesLayout = deepcopy(logic.piecesLayout)
                 logic.piecesLayout[row][file] = None
                 logic.piecesLayout[mrow][mfile] = pieceType
-                logic.Utils.pretty_print_position()
+                #logic.Utils.pretty_print_position()
                 check = logic.Backend.check_check(logic.white_king_index, True)
                 current_eval = Calculations.minimax(depth-1, alpha, beta, True, -max_color, check=check, begin_d=begin_d)
                 logic.piecesLayout = deepcopy(tmpPiecesLayout)
@@ -164,7 +166,11 @@ class Calculations():
             # Test callback
             #logic.Frontend.test_bot_callback((best_move, max_eval))
         if depth == begin_d:
-            print(best_move, max_eval)
+            row, file = logic.Utils.index_to_rowfile(int(best_move[2:4]))
+            frow, ffile = logic.Utils.index_to_rowfile(int(best_move[0:2]))
+            piece_type = type(logic.piecesLayout[frow][ffile])
+            new_format = logic.Frontend.move_other_format(best_move, row, file, piece_type)
+            print(new_format, max_eval)
         return best_move, max_eval
 
     def calculate_score(layout):
@@ -216,17 +222,22 @@ class Calculations():
     def moveOrdering(moves):
         # TODO: sort
         moveScoreGuesses = {}
-        for move in moves:
+        for move in list(moves.values()):
             moveScoreGuesses[move] = 0
             row, file = logic.Utils.index_to_rowfile(int(move[0:2]))
             mrow, mfile = logic.Utils.index_to_rowfile(int(move[2:4]))
-            pieceType = logic.piecesLayout[row][file]
-            movePieceType = logic.piecesLayout[mrow][mfile]
+            pieceType = type(logic.piecesLayout[row][file])
+            movePieceType = type(logic.piecesLayout[mrow][mfile])
             flag = move[-1]
             if logic.piecesLayout[mrow][mfile]:
                 moveScoreGuesses[move] = 10 * weights[pieceType] - weights[movePieceType]
             if flag in ['a', 's', 'd', 'f']:
                 moveScoreGuesses[move] += weights[w.Queen if flag == 'a' else w.Rook if flag == 's' else w.Bishop if flag == 'd' else w.Knight]
+        sorted_moves = list(dict(sorted(moveScoreGuesses.items(), key=lambda item: item[1])).keys())
+        movees = {}
+        for move in sorted_moves:
+            movees[list(moves.keys())[list(moves.values()).index(move)]] = move
+        return movees
 
 class Misc():
     def all_legal_moves(max_player):
