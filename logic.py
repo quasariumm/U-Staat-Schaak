@@ -273,7 +273,7 @@ class Frontend():
         promote=''
         first, last = '', ''
         if move[-1]=='c' and piece_types[piece_type]=='': 
-            _, sfile=Utils.index_to_rowfile(move[0:2])
+            _, sfile=Utils.index_to_rowfile(int(move[0:2]))
             first=file_letters[sfile]
         else:
             first=piece_types[piece_type]
