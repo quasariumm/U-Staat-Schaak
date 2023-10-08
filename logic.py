@@ -8,12 +8,18 @@ from pieces import Black as b
 from kivy.utils import get_color_from_hex
 from kivy.uix.button import Button
 from kivy.uix.popup import Popup
+from kivymd.uix.list import OneLineListItem
 
 from app import board_prim, board, piecesLayout, ChessPromotionUI
 from pieces import White as w
 from pieces import Black as b
 
 from bot import Calculations
+
+movenum=0
+move_list = None
+list_items=[]
+
 
 selected : Button = None
 tempBackground_color = []
@@ -100,6 +106,7 @@ class Frontend():
         global selected
         global tempBackground_color
         global white_to_move
+        global movenum
         global check, mate, white_king_index, black_king_index
         global white_king_moved, white_krook_moved, white_qrook_moved, black_king_moved, black_krook_moved, black_qrook_moved
         global legal_moves_cache
@@ -192,6 +199,8 @@ class Frontend():
                     mate = Backend.check_mate(white_king_index if white_to_move else black_king_index, white_to_move)
                     print('mate' if mate else 'not mate')
                 Frontend.clear_legal_moves_indicators()
+                movenum+=1
+                Frontend.update_move_list(movee,dest)
 
                 # Just to test
                 print(Calculations.minimax(4, -math.inf, math.inf, True if white_to_move else False))
@@ -256,6 +265,42 @@ class Frontend():
             square.background_normal = ''
             square.background_down = ''
 
+    def update_move_list(move, piece):
+        global movenum, list_items
+        file_letters={0:'a', 1:'b', 2:'c', 3:'d', 4:'e', 5:'f', 6:'g', 7:'h'}
+        piece_types={w.Rook:'R', w.Knight:'N', w.Bishop:'B',w.Queen:'Q', w.King:'K', w.Pawn:'', b.Rook:'R', b.Knight:'N', b.Bishop:'B', b.Queen:'Q', b.King:'K', b.Pawn:''}
+        row,file=Utils.button_to_rowfile(piece)
+        piece_type=type(piecesLayout[row][file])
+        promote=''
+        last = ''
+        #TEMP
+        check, mate = False, False
+        if move[-1]=='c' and piece_types[piece_type]=='': 
+            _, sfile=Utils.index_to_rowfile(move[0:2])
+            first=file_letters[sfile]
+        elif check:
+            last = '+'
+        elif mate:
+            last = '#'
+        elif move[-1]=='a':
+            promote='=Q'
+        elif move[-1]=='s':
+            promote='=R'
+        elif move[-1]=='d':
+            promote='=B'
+        elif move[-1]=='f':
+            promote='=N'
+        else:
+            first=piece_types[piece_type]
+        newformat=f"{first}{'x' if move[-1]=='c' else ''}{file_letters[file]}{row+1}{promote}{last}"
+        print(newformat)
+        if movenum%2==1:
+            li=OneLineListItem(text=f"{math.ceil(movenum/2)}. {newformat}")
+            move_list.add_widget(widget=li)
+            list_items.append(li)
+        else:
+            list_items[int(movenum/2-1)].text+=f' {newformat}'
+        
 class Backend():
     # NOTE: Legal move format
     #   2 chars    2 chars  1 char
@@ -540,12 +585,12 @@ class Backend():
 class Utils():
     def switch_bit_on(board, i):
         return board | 2**i
-
+    
     def button_to_rowfile(button):
         return math.floor((int(button.text)-1)/8), (int(button.text)-1)%8
 
     def index_to_rowfile(i):
         return math.floor(i/8), i%8
-    
+
     def rowfile_to_index(row, file):
         return 8*row+file

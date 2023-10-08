@@ -20,7 +20,6 @@ Config.set('input', 'mouse', 'mouse,disable_multitouch')
 
 board_prim = "#795C34"
 board_sec = "#E4D9CA"
-
 board = [None] * 64
 
 #                                                        .::.
@@ -100,7 +99,14 @@ class ChessPromotionUI(GridLayout):
         logic.promotionEvent.set()
 
 class MovesList(MDList):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        logic.move_list = self
+        print(logic.move_list, self)
+        self.bind(children=self.print_children)
+
+    def print_children(self, obj, value):
+        print(obj, value)
 
 class ChessApp(MDApp):
     def exit_promotion(*args):
@@ -110,7 +116,7 @@ class ChessApp(MDApp):
     def build(self):
         self.theme_cls.theme_style = 'Dark'
         Window.bind(on_request_close=self.exit_promotion)
-        return Builder.load_file(os.path.dirname(__file__) + '\\app.kv')        
+        return Builder.load_file(os.path.dirname(__file__) + '\\app.kv')
 
 if __name__ == "__main__":
     app = ChessApp()
