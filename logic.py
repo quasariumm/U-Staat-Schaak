@@ -277,10 +277,10 @@ class Frontend():
             first=file_letters[sfile]
         else:
             first=piece_types[piece_type]
-        if check:
-            last = '+'
-        elif mate:
+        if mate:
             last = '#'
+        elif check and not mate:
+            last = '+'
         elif move[-1]=='a':
             promote='=Q'
         elif move[-1]=='s':
@@ -366,18 +366,17 @@ class Backend():
                 pass
         # King specific
         elif isinstance(pieceType, w.King) or isinstance(pieceType, b.King):
-            king_moves = []
             try:
                 # Castling kingside
                 if (isinstance(pieceType, w.King) and not white_king_moved and not white_krook_moved and piecesLayout[row][file+1] == None and piecesLayout[row][file+2] == None)\
                 or (isinstance(pieceType, b.King) and not black_king_moved and not black_krook_moved and piecesLayout[row][file+1] == None and piecesLayout[row][file+2] == None):
-                    king_moves.append([pieceType.movement[1][0], 'k'])
-                    king_moves.append([pieceType.movement[1][1], 'k'])
+                    legalmoves.append([pieceType.movement[1][0], 'k'])
+                    legalmoves.append([pieceType.movement[1][1], 'k'])
                 # Castle queenside
                 if (isinstance(pieceType, w.King) and not white_king_moved and not white_qrook_moved and piecesLayout[row][file-1] == None and piecesLayout[row][file-2] == None and piecesLayout[row][file-3] == None)\
                 or (isinstance(pieceType, b.King) and not black_king_moved and not black_qrook_moved and piecesLayout[row][file-1] == None and piecesLayout[row][file-2] == None and piecesLayout[row][file-3] == None):
-                    king_moves.append([pieceType.movement[0][0], 'q'])
-                    king_moves.append([pieceType.movement[0][1], 'q'])
+                    legalmoves.append([pieceType.movement[0][0], 'q'])
+                    legalmoves.append([pieceType.movement[0][1], 'q'])
             except:
                 print('Thou shalt not be castling this move.')
 
@@ -387,11 +386,10 @@ class Backend():
                 tmpFile = file + tmpmove[0]
                 if not (tmpRow > 7 or tmpRow < 0 or tmpFile > 7 or tmpFile < 0):
                     if (piecesLayout[tmpRow][tmpFile] == None):
-                        king_moves.append([tmpmove, 'n'])
+                        legalmoves.append([tmpmove, 'n'])
                     if (colorstr == 'b' and issubclass(type(piecesLayout[tmpRow][tmpFile]), (w.Pawn, w.King, w.Knight, w.Bishop, w.Rook, w.Queen)))\
                     or (colorstr == 'w' and issubclass(type(piecesLayout[tmpRow][tmpFile]), (b.Pawn, b.King, b.Knight, b.Bishop, b.Rook, b.Queen))):
-                        king_moves.append([tmpmove, 'c'])
-            return Backend.check_king_legal_moves(Backend.format_legal_moves(king_moves, row, file), pieceType)
+                        legalmoves.append([tmpmove, 'c'])
         else:
             for direction in pieceType.movement:
                 for option in direction:
@@ -412,8 +410,8 @@ class Backend():
         if len(legalmoves) > 0:
             legalmoves = Backend.format_legal_moves(legalmoves, row, file)
         
-        # If the king is in check, only accept moves that lead the king into not being checked anymore
-        # If the remaining list is empty, it's mate
+        # Loop through every move and check if the king is in check when the move is made
+        # If so, the piece is pinned or in the case of the king he'll wank into a check
         if legalmoves and not check_check:
             legalmovescopy = deepcopy(legalmoves)
             for move in legalmoves:
@@ -421,7 +419,13 @@ class Backend():
                 tmpPiecesLayout = deepcopy(piecesLayout)
                 piecesLayout[row][file] = None
                 piecesLayout[mrow][mfile] = pieceType
-                tstcheck = Backend.check_check(white_king_index if white_to_move else black_king_index, white_to_move)
+                tstcheck = False
+                if issubclass(type(pieceType), (w.King, b.King)):
+                    tstcheck = Backend.check_check(int(move[2:4]), white_to_move)
+                else:
+                    tstcheck = Backend.check_check(white_king_index if white_to_move else black_king_index, white_to_move)
+                if issubclass(type(pieceType), (w.King, b.King)):
+                    print(move, Frontend.move_other_format(move, mrow, mfile, type(pieceType)), tstcheck)
                 piecesLayout = deepcopy(tmpPiecesLayout)
                 if tstcheck:
                     legalmovescopy.remove(move)
@@ -472,60 +476,6 @@ class Backend():
         if check and len(has_legal_moves) == 0:
             return True
         return False
-    
-    def reduce_king_legal_moves(pieces, moves_list, moves_dict, reduced):
-        for piece in pieces:
-            row, file = Utils.button_to_rowfile(piece)
-            if (isinstance(piecesLayout[row][file], w.King) and white_to_move)\
-            or (isinstance(piecesLayout[row][file], b.King) and not white_to_move):
-                continue
-            moves = Backend.legal_moves(button=piece)
-            if moves:
-                moves = [m[2:4] for m in moves]
-                intersection = [i for i,j in Counter(moves + reduced).items() if j > 1]
-                if intersection:
-                    for m in intersection:
-                        reduced.remove(m)
-                        moves_list.remove(moves_dict[m])
-                        del moves_dict[m]
-        return moves_list
-    
-    def check_king_legal_moves(moves_list:list, pieceType):
-        global piecesLayout
-        white_pieces, black_pieces = Backend.black_and_white_pieces_list()
-        if moves_list:
-            reduced_moves_list = [m[2:4] for m in moves_list]
-            moves_dict = {key: value for key, value in zip(reduced_moves_list, moves_list)}
-            pieces_list = black_pieces if isinstance(pieceType, w.King) else white_pieces
-            moves_list = Backend.reduce_king_legal_moves(pieces_list, moves_list, moves_dict, reduced_moves_list)
-        if (isinstance(pieceType, w.King) and not white_to_move)\
-        or (isinstance(pieceType, b.King) and white_to_move):
-            return moves_list
-        # Check if the king can capture any of the opponent's piece
-        # If so, look at that situation and look if a piece of the opponent can capture your king
-        # If that is the case, the king can't capture said piece
-        krow, kfile = Utils.index_to_rowfile(white_king_index if white_to_move else black_king_index)
-        moves_listcopy = deepcopy(moves_list)
-        for m in moves_list:
-            button = board[int(m[2:4])]
-            row, file = Utils.button_to_rowfile(button)
-            if (button.image.source[-7] == 'b' and isinstance(pieceType, w.King))\
-            or (button.image.source[-7] == 'w' and isinstance(pieceType, b.King)):
-                for piece in (black_pieces if isinstance(pieceType, w.King) else white_pieces):
-                    if (isinstance(piecesLayout[row][file], w.King) and white_to_move)\
-                    or (isinstance(piecesLayout[row][file], b.King) and not white_to_move):
-                        continue
-                    tmpPiecesLayout = deepcopy(piecesLayout)
-                    piecesLayout[krow][kfile] = None
-                    piecesLayout[row][file] = w.King() if white_to_move else b.King()
-                    moves = Backend.legal_moves(piece)
-                    piecesLayout = deepcopy(tmpPiecesLayout)
-                    if not moves:
-                        continue
-                    if (white_king_index if isinstance(pieceType, w.King) else black_king_index) in [int(n[2:4]) for n in moves]:
-                        moves_listcopy.remove(m)
-
-        return deepcopy(moves_listcopy)
 
     def update_bitboards():
         global white_bishop_bitboard, white_king_bitboard, white_knight_bitboard, white_pawn_bitboard, white_queen_bitboard, white_rook_bitboard, black_bishop_bitboard, black_king_bitboard, black_knight_bitboard, black_pawn_bitboard, black_queen_bitboard, black_rook_bitboard
