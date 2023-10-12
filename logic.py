@@ -20,7 +20,6 @@ movenum=0
 move_list = None
 list_items=[]
 
-
 selected : Button = None
 tempBackground_color = []
 white_to_move = True
@@ -57,10 +56,10 @@ black_bishop_bitboard = 0x0000000000000000
 black_knight_bitboard = 0x0000000000000000
 black_rook_bitboard = 0x0000000000000000
 black_pawn_bitboard = 0x0000000000000000
+white_total_bitboard = 0x0000000000000000
+black_total_bitboard = 0x0000000000000000
 
-# Moves format: {<algebraic chess notation>: move with indecies}
-# ex. {'e4': '1228n'}
-moves_list = {}
+moves_list = []
 promotionStatus = 0
 promotionType = ''
 promotionEvent = Event()
@@ -293,10 +292,11 @@ class Frontend():
         return newformat
 
     def update_move_list(move, piece):
-        global movenum, list_items
+        global movenum, list_items, moves_list
         row,file=Utils.button_to_rowfile(piece)
         piece_type=type(piecesLayout[row][file])
         newformat = Frontend.move_other_format(move, row, file, piece_type)
+        moves_list.append(move)
         if movenum%2==1:
             li=OneLineListItem(text=f"{math.ceil(movenum/2)}. {newformat}")
             move_list.add_widget(widget=li)
@@ -432,6 +432,85 @@ class Backend():
             legalmoves = deepcopy(legalmovescopy)
         return legalmoves
     
+    def get_all_legal_moves(white, check_check=False):
+        legal_moves = []
+        white_pieces, black_pieces = Backend.black_and_white_pieces_list()
+        multiplier = 1 if white else -1
+        color_total_bitboard = black_total_bitboard if white else white_total_bitboard
+        total_bitboard = white_total_bitboard | black_total_bitboard
+        for piece in (white_pieces if white else black_pieces):
+            index = int(piece.text)-1
+            row, file = Utils.button_to_rowfile(piece)
+            pieceClass:w.Pawn = piecesLayout[row][file] # The :w.Pawn is purely to get autocomplete
+            if issubclass(type(pieceClass), (w.Pawn, b.Pawn)):
+                # En passant
+                if len(moves_list) > 0:
+                    lastmove = moves_list[-1]
+                    lmfrom, lmto = int(lastmove[0:2]), int(lastmove[2:4]) # lm is an abbreviation for last move
+                    lmtorow, lmtofile = Utils.index_to_rowfile(lmto)
+                    lmpieceType = piecesLayout[lmtorow][lmtofile]
+                    if Backend.check_index_overlap(black_pawn_bitboard if white else white_pawn_bitboard, index+1) and file < 7 and abs(lmfrom - lmto) == 16 and issubclass(lmpieceType, (w.Pawn, b.Pawn)):
+                        legal_moves.append([pieceClass.movement[2][0], 'e'])
+                    elif Backend.check_index_overlap(black_pawn_bitboard if white else white_pawn_bitboard, index-1) and file > 0 and abs(lmfrom - lmto) == 16 and issubclass(lmpieceType, (w.Pawn, b.Pawn)):
+                        legal_moves.append([pieceClass.movement[3][0], 'e'])
+                # Capture
+                if Backend.check_index_overlap(color_total_bitboard, index+(9 if white else -7)) and file < 7:
+                    legal_moves.append([pieceClass.movement[2][0], 'c'])
+                elif Backend.check_index_overlap(color_total_bitboard, index+(7 if white else -9)) and file > 0:
+                    legal_moves.append([pieceClass.movement[3][0], 'c'])
+                # Normal move
+                if not Backend.check_index_overlap(total_bitboard, index+8*multiplier):
+                    legal_moves.append([pieceClass.movement[1][0], 'n'])
+                    # First move
+                    if not Backend.check_index_overlap(total_bitboard, index+16*multiplier) and row == (1 if white else 6):
+                        legal_moves.append([pieceClass.movement[0][0], 'n'])
+            elif issubclass(type(pieceClass), (w.King, b.King)):
+                white_king = isinstance(pieceClass, w.King)
+                # Castle kingside
+                if ((white_king and not white_king_moved and not white_krook_moved) or (not white_king and not black_king_moved and not black_krook_moved))\
+                and not Backend.check_index_overlap(total_bitboard, index+1) and not Backend.check_index_overlap(total_bitboard, index+2):
+                    legal_moves.extend([[pieceClass.movement[1][0], 'k'], [pieceClass.movement[1][1], 'k']])
+                # Castle queenside
+                if ((white_king and not white_king_moved and not white_qrook_moved) or (not white_king and not black_king_moved and not black_qrook_moved))\
+                and not Backend.check_index_overlap(total_bitboard, index-1) and not Backend.check_index_overlap(total_bitboard, index-2) and not Backend.check_index_overlap(total_bitboard, index-3):
+                    legal_moves.extend([[pieceClass.movement[0][0], 'q'], [pieceClass.movement[0][1], 'q']])
+                # The rest of the moves
+                for i in range(2, 10):
+                    f, r = pieceClass.movement[i][0]
+                    fto, rto = file+f, row+r
+                    if fto > 7 or fto < 0 or rto > 7 or rto < 0: continue
+                    if Backend.check_index_overlap(color_total_bitboard, index+(8*r+f)):
+                        legal_moves.append([(f, r), 'c'])
+                    elif not Backend.check_index_overlap(total_bitboard, index+(8*r+f)):
+                        legal_moves.append([(f, r), 'n'])
+            else:
+                for direction in pieceClass.movement:
+                    for option in direction:
+                        f, r = option
+                        fto, rto = file+f, row+r
+                        if fto > 7 or fto < 0 or rto > 7 or rto < 0: break
+                        if not Backend.check_index_overlap(total_bitboard, index+(8*r+f)):
+                            legal_moves.append([option, 'n'])
+                        elif Backend.check_index_overlap(color_total_bitboard, index+(8*r+f)):
+                            legal_moves.append([option, 'c'])
+                            break
+                        else: break
+            if check_check:
+                continue
+            legal_moves_copy = deepcopy(legal_moves)
+            for move in legal_moves:
+                fto, rto = file+move[0], row+move[1]
+                # Uhmm, I might need an attacking bitboard to do this properly
+                # Futute Patirck, that's your problem
+
+        if len(legal_moves) == 0:
+            return
+        return Backend.format_legal_moves(legal_moves)
+    
+    # Checks if the index given is 1 in the given bitboard
+    def check_index_overlap(board, index):
+        return board & 2**index >> index == 1
+    
     def format_legal_moves(legalmoves, row, file):
         well_formatted = []
         for el in legalmoves:
@@ -479,6 +558,7 @@ class Backend():
 
     def update_bitboards():
         global white_bishop_bitboard, white_king_bitboard, white_knight_bitboard, white_pawn_bitboard, white_queen_bitboard, white_rook_bitboard, black_bishop_bitboard, black_king_bitboard, black_knight_bitboard, black_pawn_bitboard, black_queen_bitboard, black_rook_bitboard
+        global white_total_bitboard, black_total_bitboard
         for el in [white_bishop_bitboard, white_king_bitboard, white_knight_bitboard, white_pawn_bitboard, white_queen_bitboard, white_rook_bitboard, black_bishop_bitboard, black_king_bitboard, black_knight_bitboard, black_pawn_bitboard, black_queen_bitboard, black_rook_bitboard]:
             el = 0x0000000000000000
         for i,row in enumerate(piecesLayout):
@@ -511,18 +591,9 @@ class Backend():
                         white_king_bitboard = Utils.switch_bit_on(white_king_bitboard, 8*i+j)
                     elif isinstance(pieceType, b.King):
                         black_king_bitboard = Utils.switch_bit_on(black_king_bitboard, 8*i+j)
-        # print('wb: ' + bin(white_bishop_bitboard))
-        # print('wk: ' + bin(white_king_bitboard))
-        # print('wn: ' + bin(white_knight_bitboard))
-        # print('wp: ' + bin(white_pawn_bitboard))
-        # print('wq: ' + bin(white_queen_bitboard))
-        # print('wr: ' + bin(white_rook_bitboard))
-        # print('bb: ' + bin(black_bishop_bitboard))
-        # print('bk: ' + bin(black_king_bitboard))
-        # print('bn: ' + bin(black_knight_bitboard))
-        # print('bp: ' + bin(black_pawn_bitboard))
-        # print('bq: ' + bin(black_queen_bitboard))
-        # print('br: ' + bin(black_rook_bitboard))
+        white_total_bitboard = white_bishop_bitboard | white_king_bitboard | white_knight_bitboard | white_rook_bitboard | white_queen_bitboard | white_pawn_bitboard
+        black_total_bitboard = black_bishop_bitboard | black_king_bitboard | black_knight_bitboard | black_rook_bitboard | black_queen_bitboard | black_pawn_bitboard
+        
     def update_pieces_layout():
         dictt={
             'wk': w.King(),
