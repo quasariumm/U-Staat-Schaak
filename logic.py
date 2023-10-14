@@ -1,4 +1,5 @@
 import math,os
+import numpy as np
 from collections import Counter
 from copy import deepcopy
 from threading import Thread, Event
@@ -58,6 +59,18 @@ black_rook_bitboard = 0x0000000000000000
 black_pawn_bitboard = 0x0000000000000000
 white_total_bitboard = 0x0000000000000000
 black_total_bitboard = 0x0000000000000000
+
+legal_moves_flags = {
+    'n': 0b0001,
+    'c': 0b0010,
+    'e': 0b0011,
+    'k': 0b0100,
+    'q': 0b0101,
+    'pq': 0b0110,
+    'pr': 0b0111,
+    'pb': 0b1000,
+    'pn': 0b1001
+}
 
 moves_list = []
 promotionStatus = 0
@@ -433,7 +446,14 @@ class Backend():
         return legalmoves
     
     def get_all_legal_moves(white, check_check=False):
-        legal_moves = []
+        '''
+        ### This function generates the legal moves in the current position
+        #### Each legal move is in the following format:
+        ##### index from: 6 bits  index to: 6 bits  flag: 4 bits
+        ##### ex. 0b0011000111000001 would be the 'normal' move e2-e4
+        '''
+        legal_moves = np.zeros(shape=218, dtype=np.int16)
+        counter = 0
         white_pieces, black_pieces = Backend.black_and_white_pieces_list()
         multiplier = 1 if white else -1
         color_total_bitboard = black_total_bitboard if white else white_total_bitboard
@@ -450,66 +470,97 @@ class Backend():
                     lmtorow, lmtofile = Utils.index_to_rowfile(lmto)
                     lmpieceType = piecesLayout[lmtorow][lmtofile]
                     if Backend.check_index_overlap(black_pawn_bitboard if white else white_pawn_bitboard, index+1) and file < 7 and abs(lmfrom - lmto) == 16 and issubclass(lmpieceType, (w.Pawn, b.Pawn)):
-                        legal_moves.append([pieceClass.movement[2][0], 'e'])
+                        ofile, orow = pieceClass.movement[2][0]
+                        legal_moves[counter] = Backend.move_to_int(row, file, row+orow, file+ofile, legal_moves_flags['e'])
+                        counter += 1
                     elif Backend.check_index_overlap(black_pawn_bitboard if white else white_pawn_bitboard, index-1) and file > 0 and abs(lmfrom - lmto) == 16 and issubclass(lmpieceType, (w.Pawn, b.Pawn)):
-                        legal_moves.append([pieceClass.movement[3][0], 'e'])
+                        ofile, orow = pieceClass.movement[3][0]
+                        legal_moves[counter] = Backend.move_to_int(row, file, row+orow, file+ofile, legal_moves_flags['e'])
+                        counter += 1
                 # Capture
                 if Backend.check_index_overlap(color_total_bitboard, index+(9 if white else -7)) and file < 7:
-                    legal_moves.append([pieceClass.movement[2][0], 'c'])
+                    ofile, orow = pieceClass.movement[2][0]
+                    legal_moves[counter] = Backend.move_to_int(row, file, row+orow, file+ofile, legal_moves_flags['c'])
+                    counter += 1
                 elif Backend.check_index_overlap(color_total_bitboard, index+(7 if white else -9)) and file > 0:
-                    legal_moves.append([pieceClass.movement[3][0], 'c'])
+                    ofile, orow = pieceClass.movement[3][0]
+                    legal_moves[counter] = Backend.move_to_int(row, file, row+orow, file+ofile, legal_moves_flags['c'])
+                    counter += 1
                 # Normal move
                 if not Backend.check_index_overlap(total_bitboard, index+8*multiplier):
-                    legal_moves.append([pieceClass.movement[1][0], 'n'])
+                    ofile, orow = pieceClass.movement[1][0]
+                    legal_moves[counter] = Backend.move_to_int(row, file, row+orow, file+ofile, legal_moves_flags['n'])
+                    counter += 1
                     # First move
                     if not Backend.check_index_overlap(total_bitboard, index+16*multiplier) and row == (1 if white else 6):
-                        legal_moves.append([pieceClass.movement[0][0], 'n'])
+                        ofile, orow = pieceClass.movement[0][0]
+                        legal_moves[counter] = Backend.move_to_int(row, file, row+orow, file+ofile, legal_moves_flags['n'])
+                        counter += 1
             elif issubclass(type(pieceClass), (w.King, b.King)):
                 white_king = isinstance(pieceClass, w.King)
                 # Castle kingside
                 if ((white_king and not white_king_moved and not white_krook_moved) or (not white_king and not black_king_moved and not black_krook_moved))\
                 and not Backend.check_index_overlap(total_bitboard, index+1) and not Backend.check_index_overlap(total_bitboard, index+2):
-                    legal_moves.extend([[pieceClass.movement[1][0], 'k'], [pieceClass.movement[1][1], 'k']])
+                    ofile, orow = pieceClass.movement[1][0]
+                    oofile, oorow = pieceClass.movement[1][1]
+                    legal_moves[counter] = Backend.move_to_int(row, file, row+orow, file+ofile, legal_moves_flags['k'])
+                    legal_moves[counter+1] = Backend.move_to_int(row, file, row+oorow, file+oofile, legal_moves_flags['k'])
+                    counter += 2
                 # Castle queenside
                 if ((white_king and not white_king_moved and not white_qrook_moved) or (not white_king and not black_king_moved and not black_qrook_moved))\
                 and not Backend.check_index_overlap(total_bitboard, index-1) and not Backend.check_index_overlap(total_bitboard, index-2) and not Backend.check_index_overlap(total_bitboard, index-3):
-                    legal_moves.extend([[pieceClass.movement[0][0], 'q'], [pieceClass.movement[0][1], 'q']])
+                    ofile, orow = pieceClass.movement[0][0]
+                    oofile, oorow = pieceClass.movement[0][1]
+                    legal_moves[counter] = Backend.move_to_int(row, file, row+orow, file+ofile, legal_moves_flags['q'])
+                    legal_moves[counter+1] = Backend.move_to_int(row, file, row+oorow, file+oofile, legal_moves_flags['q'])
+                    counter += 2
                 # The rest of the moves
                 for i in range(2, 10):
                     f, r = pieceClass.movement[i][0]
                     fto, rto = file+f, row+r
-                    if fto > 7 or fto < 0 or rto > 7 or rto < 0: continue
+                    if fto > 7 or fto < 0 or rto > 7 or rto < 0:
+                        continue
                     if Backend.check_index_overlap(color_total_bitboard, index+(8*r+f)):
-                        legal_moves.append([(f, r), 'c'])
+                        legal_moves[counter] = Backend.move_to_int(row, file, rto, fto, legal_moves_flags['c'])
+                        counter += 1
                     elif not Backend.check_index_overlap(total_bitboard, index+(8*r+f)):
-                        legal_moves.append([(f, r), 'n'])
+                        legal_moves[counter] = Backend.move_to_int(row, file, rto, fto, legal_moves_flags['n'])
+                        counter += 1
             else:
                 for direction in pieceClass.movement:
                     for option in direction:
                         f, r = option
                         fto, rto = file+f, row+r
-                        if fto > 7 or fto < 0 or rto > 7 or rto < 0: break
-                        if not Backend.check_index_overlap(total_bitboard, index+(8*r+f)):
-                            legal_moves.append([option, 'n'])
-                        elif Backend.check_index_overlap(color_total_bitboard, index+(8*r+f)):
-                            legal_moves.append([option, 'c'])
+                        if fto > 7 or fto < 0 or rto > 7 or rto < 0:
                             break
-                        else: break
+                        if not Backend.check_index_overlap(total_bitboard, index+(8*r+f)):
+                            legal_moves[counter] = Backend.move_to_int(row, file, rto, fto, legal_moves_flags['n'])
+                            counter += 1
+                        elif Backend.check_index_overlap(color_total_bitboard, index+(8*r+f)):
+                            legal_moves[counter] = Backend.move_to_int(row, file, rto, fto, legal_moves_flags['c'])
+                            counter += 1
+                            break
+                        else:
+                            break
             if check_check:
                 continue
-            legal_moves_copy = deepcopy(legal_moves)
-            for move in legal_moves:
-                fto, rto = file+move[0], row+move[1]
-                # Uhmm, I might need an attacking bitboard to do this properly
-                # Futute Patirck, that's your problem
+            # Uhmm, I might need an attacking bitboard to do this properly
+            # Future Patirck, that's your problem
 
-        if len(legal_moves) == 0:
+        print(legal_moves)
+        if counter == 0:
             return
-        return Backend.format_legal_moves(legal_moves)
+        legal_moves = np.resize(legal_moves, counter)
+        print(legal_moves)
+        return legal_moves
     
     # Checks if the index given is 1 in the given bitboard
     def check_index_overlap(board, index):
         return board & 2**index >> index == 1
+    
+    def move_to_int(row, file, rto, fto, flag):
+        print(int(f'0b{8*row+file:06b}{8*rto+fto:06b}{flag:04b}', 2))
+        return int(f'0b{8*row+file:06b}{8*rto+fto:06b}{flag:04b}', 2)
     
     def format_legal_moves(legalmoves, row, file):
         well_formatted = []
