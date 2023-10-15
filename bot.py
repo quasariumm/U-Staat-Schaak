@@ -220,7 +220,6 @@ class Calculations():
         return value
     
     def moveOrdering(moves):
-        # TODO: sort
         moveScoreGuesses = {}
         for move in list(moves.values()):
             moveScoreGuesses[move] = 0

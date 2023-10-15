@@ -1,4 +1,4 @@
-import math,os
+import math,os,time
 import numpy as np
 from collections import Counter
 from copy import deepcopy
@@ -15,7 +15,7 @@ from app import board_prim, board, piecesLayout, ChessPromotionUI
 from pieces import White as w
 from pieces import Black as b
 
-from bot import Calculations, WHITE
+from bot import Calculations, Misc, WHITE
 
 movenum=0
 move_list = None
@@ -45,20 +45,23 @@ black_king_index = 60
 #   / /_/ / / /_/ /_/ / /_/ / /_/ / /  / /_/ (__  ) 
 #  /_.___/_/\__/_.___/\____/\__,_/_/   \__,_/____/  
 #                                                   
-white_king_bitboard = 0x0000000000000000
-white_queen_bitboard = 0x0000000000000000
-white_bishop_bitboard = 0x0000000000000000
-white_knight_bitboard = 0x0000000000000000
-white_rook_bitboard = 0x0000000000000000
-white_pawn_bitboard = 0x0000000000000000
-black_king_bitboard = 0x0000000000000000
-black_queen_bitboard = 0x0000000000000000
-black_bishop_bitboard = 0x0000000000000000
-black_knight_bitboard = 0x0000000000000000
-black_rook_bitboard = 0x0000000000000000
-black_pawn_bitboard = 0x0000000000000000
-white_total_bitboard = 0x0000000000000000
-black_total_bitboard = 0x0000000000000000
+white_king_bitboard = 0
+white_queen_bitboard = 0
+white_bishop_bitboard = 0
+white_knight_bitboard = 0
+white_rook_bitboard = 0
+white_pawn_bitboard = 0
+black_king_bitboard = 0
+black_queen_bitboard = 0
+black_bishop_bitboard = 0
+black_knight_bitboard = 0
+black_rook_bitboard = 0
+black_pawn_bitboard = 0
+white_total_bitboard = 0
+black_total_bitboard = 0
+
+attacking_bitboard = 0
+pin_bitboard = 0
 
 legal_moves_flags = {
     'n': 0b0001,
@@ -76,6 +79,15 @@ moves_list = []
 promotionStatus = 0
 promotionType = ''
 promotionEvent = Event()
+
+class Tests():
+    def legal_move_time_comparison():
+        start = time.time()
+        Misc.all_legal_moves()
+        print(f'The old method took {time.time()-start:04d} seconds')
+        start = time.time()
+        Backend.get_all_legal_moves()
+        print(f'The bitboard method took {time.time()-start:04d} seconds')
 
 class Frontend():
     def square_press_action(button):
@@ -214,6 +226,7 @@ class Frontend():
                 Frontend.update_move_list(movee,dest)
 
                 # Just to test
+                Backend.get_all_legal_moves(white_to_move)
                 #Thread(target= lambda check=check: Calculations.minimax(depth=4, alpha=-math.inf, beta=math.inf, max_player=True if white_to_move else False, max_color=WHITE, check=check, begin_d=4)).start()
                 return 200
             else:
@@ -445,14 +458,14 @@ class Backend():
             legalmoves = deepcopy(legalmovescopy)
         return legalmoves
     
-    def get_all_legal_moves(white, check_check=False):
+    def get_all_legal_moves(white:bool, check_check=False):
         '''
         ### This function generates the legal moves in the current position
         #### Each legal move is in the following format:
-        ##### index from: 6 bits  index to: 6 bits  flag: 4 bits
-        ##### ex. 0b0011000111000001 would be the 'normal' move e2-e4
+        ##### index from: 6 bits, index to: 6 bits, flag: 4 bits
+        ##### ex. 0b0011000111000001 would be the move e2-e4 with the normal flagS
         '''
-        legal_moves = np.zeros(shape=218, dtype=np.int16)
+        legal_moves = np.zeros(shape=218, dtype=np.int32)
         counter = 0
         white_pieces, black_pieces = Backend.black_and_white_pieces_list()
         multiplier = 1 if white else -1
@@ -487,6 +500,7 @@ class Backend():
                     legal_moves[counter] = Backend.move_to_int(row, file, row+orow, file+ofile, legal_moves_flags['c'])
                     counter += 1
                 # Normal move
+                print(index+8*multiplier, Backend.check_index_overlap(total_bitboard, index+8*multiplier))
                 if not Backend.check_index_overlap(total_bitboard, index+8*multiplier):
                     ofile, orow = pieceClass.movement[1][0]
                     legal_moves[counter] = Backend.move_to_int(row, file, row+orow, file+ofile, legal_moves_flags['n'])
@@ -551,18 +565,32 @@ class Backend():
         if counter == 0:
             return
         legal_moves = np.resize(legal_moves, counter)
+        testee = []
+        for m in legal_moves:
+            m = m.item()
+            print(m.bit_length())
+            # TODO: MAKE THIS WAY MORE EFFICIENT
+            movestr = f'{m:016b}'
+            index_from = int(movestr[0:6], 2)
+            index_to = int(movestr[6:12], 2)
+            flag = list(legal_moves_flags.keys())[list(legal_moves_flags.values()).index(int(movestr[12:], 2))]
+            testee.append(f'{index_from}{index_to}{flag}')
+        print(testee)
         print(legal_moves)
         return legal_moves
     
     # Checks if the index given is 1 in the given bitboard
-    def check_index_overlap(board, index):
-        return board & 2**index >> index == 1
+    def check_index_overlap(board:int, index:int) -> bool:
+        '''
+        Checks if the given index is 1 in the given bitboard.
+        It shifts the board over by the index and performs a bitwise AND operation on the result and 1
+        '''
+        return board >> index & 1 == 1
     
-    def move_to_int(row, file, rto, fto, flag):
-        print(int(f'0b{8*row+file:06b}{8*rto+fto:06b}{flag:04b}', 2))
+    def move_to_int(row:int, file:int, rto:int, fto:int, flag:int) -> int:
         return int(f'0b{8*row+file:06b}{8*rto+fto:06b}{flag:04b}', 2)
     
-    def format_legal_moves(legalmoves, row, file):
+    def format_legal_moves(legalmoves:list, row:int, file:int):
         well_formatted = []
         for el in legalmoves:
             move = el[0]
@@ -644,6 +672,12 @@ class Backend():
                         black_king_bitboard = Utils.switch_bit_on(black_king_bitboard, 8*i+j)
         white_total_bitboard = white_bishop_bitboard | white_king_bitboard | white_knight_bitboard | white_rook_bitboard | white_queen_bitboard | white_pawn_bitboard
         black_total_bitboard = black_bishop_bitboard | black_king_bitboard | black_knight_bitboard | black_rook_bitboard | black_queen_bitboard | black_pawn_bitboard
+    
+    def attacking_borboard():
+        global attacking_bitboard
+
+    def pin_bitboard():
+        global pin_bitboard
         
     def update_pieces_layout():
         dictt={

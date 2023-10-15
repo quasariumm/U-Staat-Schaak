@@ -75,7 +75,6 @@ class ChessBoard(MDGridLayout):
 
 class ChessBoardSquare(Button):
     def pressAction(button):
-        logic.Backend.get_all_legal_moves(True)
         logic.Frontend.square_press_action(button)
 
 class ChessPromotionPiece(Button):
