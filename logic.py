@@ -83,12 +83,12 @@ promotionEvent = Event()
 class Tests():
     def legal_move_time_comparison():
         start = time.time()
-        Misc.all_legal_moves()
-        print(f'The old method took {time.time()-start:04d} seconds')
+        Misc.all_legal_moves(True)
+        print(f'The old method took {time.time()-start:.10f} seconds')
         start = time.time()
-        Backend.attack_pin_bitboard()
-        Backend.get_all_legal_moves()
-        print(f'The bitboard method took {time.time()-start:04d} seconds')
+        Backend.update_bitboards(True)
+        Backend.get_all_legal_moves(True)
+        print(f'The bitboard method took {time.time()-start:.10f} seconds')
 
 class Frontend():
     def square_press_action(button):

@@ -108,6 +108,10 @@ class ChessApp(MDApp):
         logic.promotionStatus = 2
         logic.promotionEvent.set()
 
+    def on_start(self):
+        logic.Tests.legal_move_time_comparison()
+        return super().on_start()
+
     def build(self):
         self.theme_cls.theme_style = 'Dark'
         Window.bind(on_request_close=self.exit_promotion)
