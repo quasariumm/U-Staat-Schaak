@@ -106,11 +106,6 @@ class MovesList(MDList):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         logic.move_list = self
-        print(logic.move_list, self)
-        self.bind(children=self.print_children)
-
-    def print_children(self, obj, value):
-        print(obj, value)
 
 class TopClock(MDFillRoundFlatIconButton):
     def __init__(self, *args, **kwargs):
@@ -148,6 +143,10 @@ class ChessApp(MDApp):
                 logic.t_clock.toggle()
             if logic.b_clock.started:
                 logic.b_clock.toggle()
+
+    def on_start(self):
+        logic.Tests.legal_move_time_comparison()
+        return super().on_start()
 
     def build(self):
         self.theme_cls.theme_style = 'Dark'
