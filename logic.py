@@ -466,12 +466,16 @@ class Backend():
         ##### index from: 6 bits, index to: 6 bits, flag: 4 bits
         ##### ex. 0b0011000111000001 would be the move e2-e4 with the normal flag
         '''
+        global black_total_bitboard, white_total_bitboard, attacking_bitboard, pin_bitboard
+
         legal_moves = np.zeros(shape=218, dtype=np.int32)
         counter = 0
         white_pieces, black_pieces = Backend.black_and_white_pieces_list()
         multiplier = 1 if white else -1
         color_total_bitboard = black_total_bitboard if white else white_total_bitboard
         total_bitboard = white_total_bitboard | black_total_bitboard
+
+        print(f'Pin bitboard: {pin_bitboard}')
         for piece in (white_pieces if white else black_pieces):
             index = int(piece.text)-1
             row, file = Utils.button_to_rowfile(piece)
@@ -514,7 +518,8 @@ class Backend():
                 white_king = isinstance(pieceClass, w.King)
                 # Castle kingside
                 if ((white_king and not white_king_moved and not white_krook_moved) or (not white_king and not black_king_moved and not black_krook_moved))\
-                and not Backend.check_index_overlap(total_bitboard, index+1) and not Backend.check_index_overlap(total_bitboard, index+2):
+                and not Backend.check_index_overlap(total_bitboard, index+1) and not Backend.check_index_overlap(total_bitboard, index+2)\
+                and not Backend.check_index_overlap(attacking_bitboard, index+1) and not Backend.check_index_overlap(attacking_bitboard, index+2):
                     ofile, orow = pieceClass.movement[1][0]
                     oofile, oorow = pieceClass.movement[1][1]
                     legal_moves[counter] = Backend.move_to_int(row, file, row+orow, file+ofile, legal_moves_flags['k'], attsquares)
@@ -522,7 +527,8 @@ class Backend():
                     counter += 2
                 # Castle queenside
                 if ((white_king and not white_king_moved and not white_qrook_moved) or (not white_king and not black_king_moved and not black_qrook_moved))\
-                and not Backend.check_index_overlap(total_bitboard, index-1) and not Backend.check_index_overlap(total_bitboard, index-2) and not Backend.check_index_overlap(total_bitboard, index-3):
+                and not Backend.check_index_overlap(total_bitboard, index-1) and not Backend.check_index_overlap(total_bitboard, index-2) and not Backend.check_index_overlap(total_bitboard, index-3)\
+                and not Backend.check_index_overlap(attacking_bitboard, index-1) and not Backend.check_index_overlap(attacking_bitboard, index-2) and not Backend.check_index_overlap(attacking_bitboard, index-3):
                     ofile, orow = pieceClass.movement[0][0]
                     oofile, oorow = pieceClass.movement[0][1]
                     legal_moves[counter] = Backend.move_to_int(row, file, row+orow, file+ofile, legal_moves_flags['q'], attsquares)
@@ -566,10 +572,28 @@ class Backend():
         legal_moves = np.resize(legal_moves, counter)
         if attsquares:
             return legal_moves
+        
+        # Check every move to see if it's pinned and remove any moves that leaves the kng in check
+        possible_moves = np.zeros(shape=218, dtype=np.int32)
+        p_counter = 0
+        for move in legal_moves:
+            movestr = f'{move:016b}'
+            s_index, t_index = int(movestr[0:6], 2), int(movestr[6:12], 2)
+            if not Backend.check_index_overlap(pin_bitboard, s_index):
+                possible_moves[p_counter] = move
+                p_counter += 1
+                continue
+            if Backend.check_index_overlap(pin_bitboard, t_index):
+                possible_moves[p_counter] = move
+                p_counter += 1
+                continue
+            print(s_index, t_index)
+        legal_moves = np.resize(possible_moves, p_counter)
+        
+        # NOTE: Redundant
         testee = []
         for m in legal_moves:
             m = m.item()
-            # TODO: MAKE THIS WAY MORE EFFICIENT
             movestr = f'{m:016b}'
             index_from = int(movestr[0:6], 2)
             index_to = int(movestr[6:12], 2)
@@ -585,7 +609,7 @@ class Backend():
         It shifts the board over by the index and performs a bitwise AND operation on the result and 1
         '''
         return board >> index & 1 == 1
-    
+
     def move_to_int(row:int, file:int, rto:int, fto:int, flag:int, attsquare:bool) -> int:
         if attsquare:
             return 8*rto+fto
@@ -659,34 +683,32 @@ class Backend():
         for i,row in enumerate(piecesLayout):
             for j,square in enumerate(row):
                 if square == None:
-                    print(8*i+j)
                     continue
                 else:
-                    print(square, issubclass(type(square), (w.Pawn, b.Pawn)), 8*i+j)
                     if isinstance(square, w.Pawn):
-                        white_pawn_bitboard = Utils.switch_bit_on(white_pawn_bitboard, 8*i+j)
+                        white_pawn_bitboard = Utils.toggle_bit(white_pawn_bitboard, 8*i+j)
                     elif isinstance(square, b.Pawn):
-                        black_pawn_bitboard = Utils.switch_bit_on(black_pawn_bitboard, 8*i+j)
+                        black_pawn_bitboard = Utils.toggle_bit(black_pawn_bitboard, 8*i+j)
                     elif isinstance(square, w.Rook):
-                        white_rook_bitboard = Utils.switch_bit_on(white_rook_bitboard, 8*i+j)
+                        white_rook_bitboard = Utils.toggle_bit(white_rook_bitboard, 8*i+j)
                     elif isinstance(square, b.Rook):
-                        black_rook_bitboard = Utils.switch_bit_on(black_rook_bitboard, 8*i+j)
+                        black_rook_bitboard = Utils.toggle_bit(black_rook_bitboard, 8*i+j)
                     elif isinstance(square, w.Knight):
-                        white_knight_bitboard = Utils.switch_bit_on(white_knight_bitboard, 8*i+j)
+                        white_knight_bitboard = Utils.toggle_bit(white_knight_bitboard, 8*i+j)
                     elif isinstance(square, b.Knight):
-                        black_knight_bitboard = Utils.switch_bit_on(black_knight_bitboard, 8*i+j)
+                        black_knight_bitboard = Utils.toggle_bit(black_knight_bitboard, 8*i+j)
                     elif isinstance(square, w.Bishop):
-                        white_bishop_bitboard = Utils.switch_bit_on(white_bishop_bitboard, 8*i+j)
+                        white_bishop_bitboard = Utils.toggle_bit(white_bishop_bitboard, 8*i+j)
                     elif isinstance(square, b.Bishop):
-                        black_bishop_bitboard = Utils.switch_bit_on(black_bishop_bitboard, 8*i+j)
+                        black_bishop_bitboard = Utils.toggle_bit(black_bishop_bitboard, 8*i+j)
                     elif isinstance(square, w.Queen):
-                        white_queen_bitboard = Utils.switch_bit_on(white_queen_bitboard, 8*i+j)
+                        white_queen_bitboard = Utils.toggle_bit(white_queen_bitboard, 8*i+j)
                     elif isinstance(square, b.Queen):
-                        black_queen_bitboard = Utils.switch_bit_on(black_queen_bitboard, 8*i+j)
+                        black_queen_bitboard = Utils.toggle_bit(black_queen_bitboard, 8*i+j)
                     elif isinstance(square, w.King):
-                        white_king_bitboard = Utils.switch_bit_on(white_king_bitboard, 8*i+j)
+                        white_king_bitboard = Utils.toggle_bit(white_king_bitboard, 8*i+j)
                     elif isinstance(square, b.King):
-                        black_king_bitboard = Utils.switch_bit_on(black_king_bitboard, 8*i+j)
+                        black_king_bitboard = Utils.toggle_bit(black_king_bitboard, 8*i+j)
         white_total_bitboard = white_bishop_bitboard | white_king_bitboard | white_knight_bitboard | white_rook_bitboard | white_queen_bitboard | white_pawn_bitboard
         black_total_bitboard = black_bishop_bitboard | black_king_bitboard | black_knight_bitboard | black_rook_bitboard | black_queen_bitboard | black_pawn_bitboard
         Backend.attack_pin_bitboard(white)
@@ -699,7 +721,7 @@ class Backend():
         
         for attsquare in Backend.get_all_legal_moves(not white, attsquares=True):
             attsquare = attsquare.item()
-            Utils.switch_bit_on(attacking_bitboard, attsquare)
+            Utils.toggle_bit(attacking_bitboard, attsquare)
 
         # NOTE: Only check sliding pieces (bishop, rook, queen)
         # This array is 64 in length, so not the 8x8
@@ -709,7 +731,6 @@ class Backend():
             return
         for square in pin_check:
             pin_bitboard |= Backend.get_pin_along_sliding_piece(not white, square)
-        print(f'Pin bitboard: {pin_bitboard}')
 
     def get_pin_along_sliding_piece(white:bool, square:int):
         pinnypinny = 0
@@ -718,10 +739,9 @@ class Backend():
         color_total_bitboard = white_total_bitboard if white else black_total_bitboard
         opponent_total_bitboard = black_total_bitboard if white else white_total_bitboard
         opponent_king_bitboard = black_king_bitboard if white else white_king_bitboard
-        print(color_total_bitboard, opponent_total_bitboard, opponent_king_bitboard)
         for direction in pieceClass.movement:
             pinned_pieces = 0
-            tmp_pin_bitboard = 0
+            tmp_pin_bitboard = Utils.toggle_bit(0, square)
             for option in direction:
                 f, r = option
                 fto, rto = file+f, row+r
@@ -732,14 +752,13 @@ class Backend():
                 if Backend.check_index_overlap(color_total_bitboard, square+(8*r+f)):
                     break
                 elif Backend.check_index_overlap(opponent_king_bitboard, square+(8*r+f)):
-                    tmp_pin_bitboard = Utils.switch_bit_on(tmp_pin_bitboard, square+(8*r+f))
                     pinnypinny = pinnypinny | tmp_pin_bitboard
                     break
                 elif Backend.check_index_overlap(opponent_total_bitboard, square+(8*r+f)):
                     pinned_pieces += 1
-                    tmp_pin_bitboard = Utils.switch_bit_on(tmp_pin_bitboard, square+(8*r+f))
+                    tmp_pin_bitboard = Utils.toggle_bit(tmp_pin_bitboard, square+(8*r+f))
                 else:
-                    tmp_pin_bitboard = Utils.switch_bit_on(tmp_pin_bitboard, square+(8*r+f))
+                    tmp_pin_bitboard = Utils.toggle_bit(tmp_pin_bitboard, square+(8*r+f))
         return pinnypinny
         
     def update_pieces_layout():
@@ -764,8 +783,8 @@ class Backend():
             piecesLayout[row][file]= piece
 
 class Utils():
-    def switch_bit_on(board:int, i:int) -> int:
-        return board | (1<<i)
+    def toggle_bit(board:int, i:int) -> int:
+        return board ^ (1<<i)
 
     def button_to_rowfile(button:Button) -> tuple[int, int]:
         return math.floor((int(button.text)-1)/8), (int(button.text)-1)%8
