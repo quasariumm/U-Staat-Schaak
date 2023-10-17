@@ -11,6 +11,8 @@ from threading import Thread
 selected : Button = None
 tempBackground_color = []
 white_to_move = True
+t_clock, b_clock = None, None
+topClock, bottomClock = None, None
 
 # Castling requirements
 white_krook_moved = False
@@ -169,9 +171,8 @@ class Clock():
             self.clockWidget.text = timeformat
             time.sleep(0.02)
             print(timeformat, end='\r')
-    
-    def toggle(self,t):
-        print('stopping?')
+
+    def toggle(self,t=0):
         if not self.started:
             self.starttime = time.time() - self.totaltime
             self.started = True

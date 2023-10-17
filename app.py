@@ -21,8 +21,6 @@ board_sec = "#E4D9CA"
 
 board = [None] * 64
 time_control = 600
-t_clock, b_clock = None, None
-topClock, bottomClock = None, None
 
 app = None
 #                                                        .::.
@@ -86,35 +84,35 @@ class MovesList(MDList):
 class TopClock(MDFillRoundFlatIconButton):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        global topClock, app
-        topClock = self
+        global app
+        logic.topClock = self
         ChessApp.init_clocks(app)
 
 class BottomClock(MDFillRoundFlatIconButton):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        global bottomClock, app
-        bottomClock = self
+        global app
+        logic.bottomClock = self
         ChessApp.init_clocks(app)
 
 class ChessApp(MDApp):
     def init_clocks(self):
-        global t_clock, b_clock, time_control, topClock, bottomClock
-        if (topClock is None) or (bottomClock is None):
+        global time_control
+        if (logic.topClock is None) or (logic.bottomClock is None):
             return
-        topClock.text = '{:02d}:{:02d}'.format(math.floor(time_control/60), time_control%60)
-        bottomClock.text = '{:02d}:{:02d}'.format(math.floor(time_control/60), time_control%60)
-        t_clock = logic.Clock(clock=topClock)
-        b_clock = logic.Clock(clock=bottomClock)
-        t_clock.toggle(t=time_control)
-
+        logic.topClock.text = '{:02d}:{:02d}'.format(math.floor(time_control/60), time_control%60)
+        logic.bottomClock.text = '{:02d}:{:02d}'.format(math.floor(time_control/60), time_control%60)
+        logic.t_clock = logic.Clock(clock=logic.topClock)
+        logic.b_clock = logic.Clock(clock=logic.bottomClock)
+        logic.t_clock.toggle(t=time_control)
+        logic.b_clock.toggle(t=time_control)
+    
     def on_stop(self):
-        global t_clock, b_clock, time_control
-        if t_clock and b_clock:
-            if t_clock.started:
-                t_clock.toggle(t=time_control)
-            elif b_clock.started:
-                b_clock.toggle(t=time_control)
+        if logic.t_clock and logic.b_clock:
+            if logic.t_clock.started:
+                logic.t_clock.toggle()
+            if logic.b_clock.started:
+                logic.b_clock.toggle()
 
     def build(self):
         self.theme_cls.theme_style = 'Dark'
