@@ -95,7 +95,7 @@ class Tests():
 class Frontend():
     def square_press_action(button):
         global selected
-        global tempBackground_color
+        global tempBackground_colorissubcla
         global white_to_move
         row, file = Utils.button_to_rowfile(button)
 
@@ -513,11 +513,11 @@ class Backend():
                     lmfrom, lmto = int(lastmove[0:2]), int(lastmove[2:4]) # lm is an abbreviation for last move
                     lmtorow, lmtofile = Utils.index_to_rowfile(lmto)
                     lmpieceType = piecesLayout[lmtorow][lmtofile]
-                    if Backend.check_index_overlap(black_pawn_bitboard if white else white_pawn_bitboard, index+1) and file < 7 and abs(lmfrom - lmto) == 16 and issubclass(lmpieceType, (w.Pawn, b.Pawn)):
+                    if Backend.check_index_overlap(black_pawn_bitboard if white else white_pawn_bitboard, index+1) and file < 7 and abs(lmfrom - lmto) == 16 and issubclass(type(lmpieceType), (w.Pawn, b.Pawn)):
                         ofile, orow = pieceClass.movement[2][0]
                         legal_moves[counter] = Backend.move_to_int(row, file, row+orow, file+ofile, legal_moves_flags['e'], attsquares)
                         counter += 1
-                    elif Backend.check_index_overlap(black_pawn_bitboard if white else white_pawn_bitboard, index-1) and file > 0 and abs(lmfrom - lmto) == 16 and issubclass(lmpieceType, (w.Pawn, b.Pawn)):
+                    elif Backend.check_index_overlap(black_pawn_bitboard if white else white_pawn_bitboard, index-1) and file > 0 and abs(lmfrom - lmto) == 16 and issubclass(type(lmpieceType), (w.Pawn, b.Pawn)):
                         ofile, orow = pieceClass.movement[3][0]
                         legal_moves[counter] = Backend.move_to_int(row, file, row+orow, file+ofile, legal_moves_flags['e'], attsquares)
                         counter += 1
