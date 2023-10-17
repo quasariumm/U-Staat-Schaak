@@ -5,11 +5,13 @@ from kivy.graphics import *
 from kivymd.uix.screen import MDScreen
 from kivymd.uix.gridlayout import MDGridLayout, GridLayout
 from kivy.uix.button import Button
+from kivymd.uix.button import MDFillRoundFlatIconButton
 from kivymd.uix.list import MDList, OneLineListItem
 from kivymd.uix.scrollview import MDScrollView
 from kivy.utils import get_color_from_hex
 from kivy.core.window import Window
 import os, math, time
+from threading import Thread
 
 from pieces import White as w
 from pieces import Black as b
@@ -21,7 +23,9 @@ Config.set('input', 'mouse', 'mouse,disable_multitouch')
 board_prim = "#795C34"
 board_sec = "#E4D9CA"
 board = [None] * 64
+time_control = 600
 
+app = None
 #                                                        .::.
 #                                             _()_       _::_
 #                                   _O      _/____\_   _/____\_
@@ -108,10 +112,42 @@ class MovesList(MDList):
     def print_children(self, obj, value):
         print(obj, value)
 
+class TopClock(MDFillRoundFlatIconButton):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        global app
+        logic.topClock = self
+        ChessApp.init_clocks(app)
+
+class BottomClock(MDFillRoundFlatIconButton):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        global app
+        logic.bottomClock = self
+        ChessApp.init_clocks(app)
+
 class ChessApp(MDApp):
     def exit_promotion(*args):
         logic.promotionStatus = 2
         logic.promotionEvent.set()
+
+    def init_clocks(self):
+        global time_control
+        if (logic.topClock is None) or (logic.bottomClock is None):
+            return
+        logic.topClock.text = '{:02d}:{:02d}'.format(math.floor(time_control/60), time_control%60)
+        logic.bottomClock.text = '{:02d}:{:02d}'.format(math.floor(time_control/60), time_control%60)
+        logic.t_clock = logic.Clock(clock=logic.topClock)
+        logic.b_clock = logic.Clock(clock=logic.bottomClock)
+        logic.t_clock.toggle(t=time_control)
+        logic.b_clock.toggle(t=time_control)
+    
+    def on_stop(self):
+        if logic.t_clock and logic.b_clock:
+            if logic.t_clock.started:
+                logic.t_clock.toggle()
+            if logic.b_clock.started:
+                logic.b_clock.toggle()
 
     def build(self):
         self.theme_cls.theme_style = 'Dark'

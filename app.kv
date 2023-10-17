@@ -38,28 +38,32 @@
         MDRelativeLayout:
             size_hint_y: 1
             size_hint_x: 0.25
-            MDFillRoundFlatIconButton:
-                text: "10:00"
-                disabled: True
-                background_color: hex("#ffffff")
-                disabled_color: hex("#ffffff")
-                background_disabled_normal: ""
-                background_disabled_down: ""
-                icon: "clock-outline"
+            TopClock:
                 size_hint_y: .075
                 size_hint_x: .35
                 pos_hint: {"top": 1-((self.parent.parent.height-board.height)/2)/self.parent.parent.height}
-            MDFillRoundFlatIconButton:
-                text: "10:00"
-                background_color: hex("#ffffff")
-                disabled_color: hex("#ffffff")
-                disabled: True
-                background_disabled_normal: ""
-                background_disabled_down: ""
-                icon: "clock-outline"
+            BottomClock:
                 size_hint_y: .075
                 size_hint_x: .35
                 pos_hint: {"top": ((self.parent.parent.height-board.height)/2+self.height)/self.parent.parent.height}
+
+<TopClock>:
+    text: '10:29'
+    disabled: True
+    background_color: hex("#ffffff")
+    disabled_color: hex("#ffffff")
+    background_disabled_normal: ""
+    background_disabled_down: ""
+    icon: "clock-outline"
+
+<BottomClock>:
+    text: '10:29'
+    disabled: True
+    background_color: hex("#ffffff")
+    disabled_color: hex("#ffffff")
+    background_disabled_normal: ""
+    background_disabled_down: ""
+    icon: "clock-outline"
 
 <ChessBoardSquare>:
     background_normal: ""

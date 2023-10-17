@@ -1,4 +1,4 @@
-import math,os
+import math,os,time
 from collections import Counter
 from copy import deepcopy
 from threading import Thread, Event
@@ -13,7 +13,7 @@ from kivy.uix.popup import Popup
 from app import board_prim, board, piecesLayout, ChessPromotionUI
 from pieces import White as w
 from pieces import Black as b
-
+from threading import Thread
 from bot import Calculations, WHITE
 
 movenum=0
@@ -24,6 +24,8 @@ list_items=[]
 selected : Button = None
 tempBackground_color = []
 white_to_move = True
+t_clock, b_clock = None, None
+topClock, bottomClock = None, None
 legal_moves_cache = None
 
 # Castling requirements
@@ -303,7 +305,31 @@ class Frontend():
             list_items.append(li)
         else:
             list_items[int(movenum/2-1)].text+=f' {newformat}'
-        
+class Clock(): 
+    def __init__(self, clock) -> None:
+        self.starttime = time.time()
+        self.totaltime = 0
+        self.started = False
+        self.clockWidget = clock
+
+    def clock(self,t):
+        while self.totaltime<t and self.started:
+            self.totaltime = round((time.time() - self.starttime), 2)
+            mins, secs = math.ceil((t-self.totaltime+1)/60)-1, math.ceil(t-self.totaltime)%60
+            timeformat= '{:02d}:{:02d}'.format(mins,secs)
+            self.clockWidget.text = timeformat
+            time.sleep(0.02)
+            print(timeformat, end='\r')
+
+    def toggle(self,t=0):
+        if not self.started:
+            self.starttime = time.time() - self.totaltime
+            self.started = True
+            Thread(target= self.clock, args= [t]).start()
+        else:
+            self.started = False
+        return
+
 class Backend():
     # NOTE: Legal move format
     #   2 chars    2 chars  1 char
