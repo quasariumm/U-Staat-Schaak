@@ -134,7 +134,6 @@ class ChessApp(MDApp):
         logic.bottomClock.text = '{:02d}:{:02d}'.format(math.floor(time_control/60), time_control%60)
         logic.t_clock = logic.Clock(clock=logic.topClock)
         logic.b_clock = logic.Clock(clock=logic.bottomClock)
-        logic.t_clock.toggle(t=time_control)
         logic.b_clock.toggle(t=time_control)
     
     def on_stop(self):

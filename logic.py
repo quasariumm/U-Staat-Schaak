@@ -11,7 +11,7 @@ from kivy.uix.button import Button
 from kivymd.uix.list import OneLineListItem
 from kivy.uix.popup import Popup
 
-from app import board_prim, board, piecesLayout, ChessPromotionUI
+from app import board_prim, board, piecesLayout, ChessPromotionUI, time_control
 from pieces import White as w
 from pieces import Black as b
 from threading import Thread
@@ -137,6 +137,7 @@ class Frontend():
         global movenum
         global white_king_moved, white_krook_moved, white_qrook_moved, black_king_moved, black_krook_moved, black_qrook_moved
         global legal_moves_cache
+        global t_clock,b_clock
         row, file = Utils.button_to_rowfile(check_piece)
         destrow, destfile = Utils.button_to_rowfile(dest)
         if (destrow == 7 and white_to_move or destrow == 0 and not white_to_move) and issubclass(type(piecesLayout[row][file]), (w.Pawn, b.Pawn)):
@@ -227,7 +228,8 @@ class Frontend():
                 Frontend.clear_legal_moves_indicators()
                 movenum+=1
                 Frontend.update_move_list(movee,dest)
-
+                t_clock.toggle(t=time_control)
+                b_clock.toggle(t=time_control)
                 # Just to test
                 Backend.get_all_legal_moves(white_to_move)
                 #Thread(target= lambda check=check: Calculations.minimax(depth=4, alpha=-math.inf, beta=math.inf, max_player=True if white_to_move else False, max_color=WHITE, check=check, begin_d=4)).start()
@@ -249,6 +251,7 @@ class Frontend():
         global white_to_move
         global legal_moves_cache
         global promotionStatus, promotionEvent
+        global t_clock, b_clock
         promotionEvent.wait()
         if promotionStatus == 2:
             popup.dismiss()
@@ -278,6 +281,8 @@ class Frontend():
                     mate = Backend.check_mate(white_king_index if white_to_move else black_king_index, white_to_move)
                     print('mate' if mate else 'not mate')
                 Frontend.clear_legal_moves_indicators()
+                t_clock.toggle(t=time_control)
+                b_clock.toggle(t=time_control)
                 return 200
         else:
             return 404
