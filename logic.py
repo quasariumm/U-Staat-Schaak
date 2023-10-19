@@ -428,6 +428,7 @@ class Backend():
 
             if issubclass(type(pieceClass), (w.Pawn, b.Pawn)):
                 # En passant
+                # FIXME: en passant doesn't work
                 if len(moves_list) > 0:
                     lastmove = moves_list[-1]
                     lastmovestr = f'{lastmove:016b}'
@@ -546,7 +547,6 @@ class Backend():
         
         # Check every move to see if it's pinned and remove any moves that leaves the kng in check
         # Also, check if any king move walks into check
-        # FIXME: No move restrictions if in check
         possible_moves = np.zeros(shape=218, dtype=np.int32)
         p_counter = 0
         for move in legal_moves:
@@ -617,7 +617,6 @@ class Backend():
         legal_moves_per_square = deepcopy(moves_dict)
         return
     
-    # FIXME: Bitboards are not enough 
     def make_unmake_move(s_index:int, t_index:int, flag:str, white:bool, sname=None, tname=None) -> tuple[str, str] | None:
         global white_king_bitboard, black_king_bitboard, white_queen_bitboard, black_queen_bitboard, white_bishop_bitboard, black_bishop_bitboard, white_knight_bitboard, black_knight_bitboard, white_rook_bitboard, black_rook_bitboard, white_pawn_bitboard, black_pawn_bitboard
         global white_total_bitboard, black_total_bitboard
