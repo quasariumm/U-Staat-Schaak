@@ -95,7 +95,7 @@ class Tests():
 class Frontend():
     def square_press_action(button):
         global selected
-        global tempBackground_colorissubcla
+        global tempBackground_color
         global white_to_move
         row, file = Utils.button_to_rowfile(button)
 
