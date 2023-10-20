@@ -1,10 +1,9 @@
 import logic
-import app
 from pieces import White as w
 from pieces import Black as b
 
 from copy import deepcopy
-import math, random
+import math, random, time
 
 WHITE = 1
 BLACK = -1
@@ -19,22 +18,44 @@ weights = {
     b.Rook: 500,
     b.Knight: 300,
     b.Bishop: 320,
-    b.Pawn: 100
+    b.Pawn: 100,
+    w.King: 0,
+    b.King: 0
 }
+piece_bitboards = [
+    'white_king_bitboard', 'black_king_bitboard',
+    'white_queen_bitboard', 'black_queen_bitboard',
+    'white_bishop_bitboard', 'black_bishop_bitboard',
+    'white_knight_bitboard', 'black_knight_bitboard',
+    'white_rook_bitboard', 'black_rook_bitboard',
+    'white_pawn_bitboard', 'black_pawn_bitboard'
+]
 
 ENDGAME_MATERIAL_START = 2 * weights[w.Rook] + weights[w.Bishop] + weights[w.Knight]
 MATERIAL_START = 2 * weights[w.Rook] + 2 * weights[w.Bishop] + 2 * weights[w.Knight] + weights[w.Queen]
 
 # https://www.chessprogramming.org/Simplified_Evaluation_Function
 pawn_square_table = [
-    0,  0,  0,  0,  0,  0,  0,  0,
-    50, 50, 50, 50, 50, 50, 50, 50,
-    10, 10, 20, 30, 30, 20, 10, 10,
-    5,  5,  10, 25, 25, 10,  5,  5,
-    0,  0,  0,  20, 20,  0,  0,  0,
-    5, -5, -10,  0,  0,-10, -5,  5,
-    5, 10, 10, -20,-20, 10, 10,  5,
-    0,  0,  0,   0,  0,  0,  0,  0
+    [
+        0,  0,  0,  0,  0,  0,  0,  0,
+        50, 50, 50, 50, 50, 50, 50, 50,
+        10, 10, 20, 30, 30, 20, 10, 10,
+        5,  5,  10, 25, 25, 10,  5,  5,
+        0,  0,  0,  20, 20,  0,  0,  0,
+        5, -5, -10,  0,  0,-10, -5,  5,
+        5, 10, 10, -20,-20, 10, 10,  5,
+        0,  0,  0,   0,  0,  0,  0,  0
+    ],
+    [ # Endgame
+        0,   0,  0,  0,  0,  0,  0,  0,
+        80, 80, 80, 80, 80, 80, 80, 80,
+        50, 50, 50, 50, 50, 50, 50, 50,
+        30, 30, 30, 30, 30, 30, 30, 30,
+        20, 20, 20, 20, 20, 20, 20, 20,
+        10, 10, 10, 10, 10, 10, 10, 10,
+        10, 10, 10, 10, 10, 10, 10, 10,
+        0,   0,  0,  0,  0,  0,  0,  0,
+    ]
 ]
 knight_square_table = [
     -50,-40,-30,-30,-30,-30,-40,-50,
@@ -77,7 +98,7 @@ queen_square_table = [
     -20,-10,-10, -5, -5,-10,-10,-20
 ]
 king_square_table = [
-    [ # Middlegame
+    [
         -30,-40,-40,-50,-50,-40,-40,-30,
         -30,-40,-40,-50,-50,-40,-40,-30,
         -30,-40,-40,-50,-50,-40,-40,-30,
@@ -87,7 +108,7 @@ king_square_table = [
          20, 20,  0,  0,  0,  0, 20, 20,
          20, 30, 10,  0,  0, 10, 30, 20
     ],
-    [
+    [ # Endgame
         -50,-40,-30,-20,-20,-30,-40,-50,
         -30,-20,-10,  0,  0,-10,-20,-30,
         -30,-10, 20, 30, 30, 20,-10,-30,
@@ -118,25 +139,26 @@ class Calculations():
     def minimax(depth:int, alpha:float, beta:float, max_player:bool, max_color:int, check:bool, begin_d:int):
         if depth == 0:
             return None, Calculations.evaluation(max_color)
-        moves = Misc.all_legal_moves(max_player)
+        moves = logic.Backend.get_all_legal_moves(max_player)
         moves = Calculations.moveOrdering(moves)
         if len(moves) == 0:
             if check:
+                print(f'mate in {depth}')
                 return depth, math.inf * (WHITE if max_player else BLACK)
             return 'stalemate', 0 # Stalemate
-        best_move = random.choice(list(moves.values()))
+        best_move = random.choice(moves)
         if max_player:
             max_eval = -math.inf
-            for pieceType, move in moves.items():
-                row, file = logic.Utils.index_to_rowfile(int(move[0:2]))
-                mrow, mfile = logic.Utils.index_to_rowfile(int(move[2:4]))
-                tmpPiecesLayout = deepcopy(logic.piecesLayout)
-                logic.piecesLayout[row][file] = None
-                logic.piecesLayout[mrow][mfile] = pieceType
-                #logic.Utils.pretty_print_position()
-                check = logic.Backend.check_check(logic.black_king_index, False)
+            for move in moves:
+                fi, ti, flag = logic.Utils.move_to_fi_ti_flag(move)
+                sname, tname = logic.Backend.make_unmake_move(fi, ti, flag, True)
+                logic.white_total_bitboard = logic.white_bishop_bitboard | logic.white_king_bitboard | logic.white_knight_bitboard | logic.white_rook_bitboard | logic.white_queen_bitboard | logic.white_pawn_bitboard
+                logic.black_total_bitboard = logic.black_bishop_bitboard | logic.black_king_bitboard | logic.black_knight_bitboard | logic.black_rook_bitboard | logic.black_queen_bitboard | logic.black_pawn_bitboard
+                logic.Backend.attack_pin_bitboard(False)
+                check = logic.Backend.check_index_overlap(logic.attacking_bitboard, int(math.log2(logic.white_king_bitboard)))
+                logic.check = check
                 current_eval = Calculations.minimax(depth-1, alpha, beta, False, -max_color, check=check, begin_d=begin_d)
-                logic.piecesLayout = deepcopy(tmpPiecesLayout)
+                logic.Backend.make_unmake_move(fi, ti, flag, True, sname=sname, tname=tname)
                 if current_eval[1] > max_eval:
                     max_eval = current_eval[1]
                     best_move = move
@@ -147,16 +169,16 @@ class Calculations():
             #logic.Frontend.test_bot_callback((best_move, max_eval))
         else:
             max_eval = math.inf
-            for pieceType, move in moves.items():
-                row, file = logic.Utils.index_to_rowfile(int(move[0:2]))
-                mrow, mfile = logic.Utils.index_to_rowfile(int(move[2:4]))
-                tmpPiecesLayout = deepcopy(logic.piecesLayout)
-                logic.piecesLayout[row][file] = None
-                logic.piecesLayout[mrow][mfile] = pieceType
-                #logic.Utils.pretty_print_position()
-                check = logic.Backend.check_check(logic.white_king_index, True)
+            for move in moves:
+                fi, ti, flag = logic.Utils.move_to_fi_ti_flag(move)
+                sname, tname = logic.Backend.make_unmake_move(fi, ti, flag, False)
+                logic.white_total_bitboard = logic.white_bishop_bitboard | logic.white_king_bitboard | logic.white_knight_bitboard | logic.white_rook_bitboard | logic.white_queen_bitboard | logic.white_pawn_bitboard
+                logic.black_total_bitboard = logic.black_bishop_bitboard | logic.black_king_bitboard | logic.black_knight_bitboard | logic.black_rook_bitboard | logic.black_queen_bitboard | logic.black_pawn_bitboard
+                logic.Backend.attack_pin_bitboard(True)
+                check = logic.Backend.check_index_overlap(logic.attacking_bitboard, int(math.log2(logic.white_king_bitboard)))
+                logic.check = check
                 current_eval = Calculations.minimax(depth-1, alpha, beta, True, -max_color, check=check, begin_d=begin_d)
-                logic.piecesLayout = deepcopy(tmpPiecesLayout)
+                logic.Backend.make_unmake_move(fi, ti, flag, False, sname=sname, tname=tname)
                 if current_eval[1] < max_eval:
                     max_eval = current_eval[1]
                     best_move = move
@@ -166,27 +188,27 @@ class Calculations():
             # Test callback
             #logic.Frontend.test_bot_callback((best_move, max_eval))
         if depth == begin_d:
-            row, file = logic.Utils.index_to_rowfile(int(best_move[2:4]))
-            frow, ffile = logic.Utils.index_to_rowfile(int(best_move[0:2]))
-            piece_type = type(logic.piecesLayout[frow][ffile])
-            new_format = logic.Frontend.move_other_format(best_move, row, file, piece_type)
+            fi, _, _ = logic.Utils.move_to_fi_ti_flag(best_move)
+            piece_type = logic.Utils.get_piece_type(fi)()
+            new_format = logic.Frontend.move_other_format(best_move, piece_type)
             print(new_format, max_eval)
         return best_move, max_eval
 
-    def calculate_score(layout):
+    def calculate_score(piecesTypesList:list):
         white_score, black_score = 0, 0
-        for row in layout:
-            for el in row:
-                if issubclass(type(el), (w.Queen, w.Rook, w.Knight, w.Bishop, w.Pawn)):
-                    white_score += weights[type(el)]
-                elif issubclass(type(el), (b.Queen, b.Rook, b.Knight, b.Bishop, b.Pawn)):
-                    black_score += weights[type(el)]
+        for piece in piecesTypesList:
+            if piece is None:
+                continue
+            if issubclass(piece, (w.Queen, w.Rook, w.Knight, w.Bishop, w.Pawn)):
+                white_score += weights[piece]
+            elif issubclass(piece, (b.Queen, b.Rook, b.Knight, b.Bishop, b.Pawn)):
+                black_score += weights[piece]
         return white_score, black_score
     
     def evaluation(color):
-        white_eval, black_eval = Calculations.calculate_score(logic.piecesLayout)
-
         piecesTypesList:list = Misc.piecesTypesList()
+        white_eval, black_eval = Calculations.calculate_score(piecesTypesList)
+
         white_mat_nopawns = white_eval - piecesTypesList.count(w.Pawn) * weights[w.Pawn]
         black_mat_nopawns = black_eval - piecesTypesList.count(b.Pawn) * weights[b.Pawn]
         whiteEndgamePhaseWeight = Calculations.endgameWeight(white_mat_nopawns)
@@ -207,13 +229,17 @@ class Calculations():
         white_pieces, black_pieces = logic.Backend.black_and_white_pieces_list()
         for piece in (white_pieces if white else black_pieces):
             row, file = logic.Utils.button_to_rowfile(piece)
-            pieceType = type(logic.piecesLayout[row][file])
+            pieceType = logic.Utils.get_piece_type(8*row+file)
             if white:
                 index = logic.Utils.rowfile_to_index(7-row, file)
             else:
                 index = int(piece.text)-1
             if issubclass(pieceType, (w.King, b.King)):
-                tables = piece_square_tables[pieceType]
+                tables = king_square_table
+                value += Misc.lerpArrays(tables[0], tables[1], endgameWeight)[index]
+                continue
+            elif issubclass(pieceType, (w.Pawn, b.Pawn)):
+                tables = pawn_square_table
                 value += Misc.lerpArrays(tables[0], tables[1], endgameWeight)[index]
                 continue
             value += piece_square_tables[pieceType][index]
@@ -221,38 +247,23 @@ class Calculations():
     
     def moveOrdering(moves):
         moveScoreGuesses = {}
-        for move in list(moves.values()):
+        for move in moves:
             moveScoreGuesses[move] = 0
-            row, file = logic.Utils.index_to_rowfile(int(move[0:2]))
-            mrow, mfile = logic.Utils.index_to_rowfile(int(move[2:4]))
-            pieceType = type(logic.piecesLayout[row][file])
-            movePieceType = type(logic.piecesLayout[mrow][mfile])
-            flag = move[-1]
-            if logic.piecesLayout[mrow][mfile]:
+            fi, ti, flag = logic.Utils.move_to_fi_ti_flag(move)
+            pieceType = logic.Utils.get_piece_type(fi)
+            movePieceType = logic.Utils.get_piece_type(ti)
+            if movePieceType is not None and not issubclass(movePieceType, (w.King, b.King)):
                 moveScoreGuesses[move] = 10 * weights[pieceType] - weights[movePieceType]
-            if flag in ['a', 's', 'd', 'f']:
-                moveScoreGuesses[move] += weights[w.Queen if flag == 'a' else w.Rook if flag == 's' else w.Bishop if flag == 'd' else w.Knight]
+            if flag in ['pq', 'pr', 'pb', 'pn', 'qq', 'qr', 'qb', 'qn']:
+                moveScoreGuesses[move] += weights[w.Queen if flag[-1] == 'q' else w.Rook if flag[-1] == 'r' else w.Bishop if flag[-1] == 'b' else w.Knight]
         sorted_moves = list(dict(sorted(moveScoreGuesses.items(), key=lambda item: item[1])).keys())
-        movees = {}
-        for move in sorted_moves:
-            movees[list(moves.keys())[list(moves.values()).index(move)]] = move
-        return movees
+        return sorted_moves
 
 class Misc():
-    def all_legal_moves(max_player):
-        white_pieces, black_pieces = logic.Backend.black_and_white_pieces_list()
-        moves = {}
-        for el in (white_pieces if max_player else black_pieces):
-            row, file = logic.Utils.button_to_rowfile(el)
-            pieceType = logic.piecesLayout[row][file]
-            moves.update({pieceType: move for move in logic.Backend.legal_moves(el)})
-        return moves
-
     def piecesTypesList():
         li = []
-        for row in logic.piecesLayout:
-            for square in row:
-                li.append(type(square))
+        for i in range(64):
+            li.append(logic.Utils.get_piece_type(i))
         return li
     
     def lerpArrays(a1:list, a2:list, t:float):

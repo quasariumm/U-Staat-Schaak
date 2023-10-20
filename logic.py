@@ -63,6 +63,15 @@ black_pawn_bitboard = 0
 white_total_bitboard = 0
 black_total_bitboard = 0
 
+piece_bitboards = [
+    'white_king_bitboard', 'black_king_bitboard',
+    'white_queen_bitboard', 'black_queen_bitboard',
+    'white_bishop_bitboard', 'black_bishop_bitboard',
+    'white_knight_bitboard', 'black_knight_bitboard',
+    'white_rook_bitboard', 'black_rook_bitboard',
+    'white_pawn_bitboard', 'black_pawn_bitboard'
+]
+
 bitboard_name_to_pieceClass = {
     'white_king_bitboard': w.King(),
     'white_queen_bitboard': w.Queen(),
@@ -247,7 +256,7 @@ class Frontend():
                 print('mate' if mate else 'not mate')
                 Frontend.update_move_list(movee, pieceClass)
                 # NOTE: Test
-                #Thread(target= lambda check=check: Calculations.minimax(depth=4, alpha=-math.inf, beta=math.inf, max_player=True if white_to_move else False, max_color=WHITE, check=check, begin_d=4)).start()
+                Thread(target= lambda check=check: Calculations.minimax(depth=4, alpha=-math.inf, beta=math.inf, max_player=True if white_to_move else False, max_color=WHITE, check=check, begin_d=4)).start()
                 return 200
             else:
                 return 404
@@ -414,7 +423,6 @@ class Backend():
         color_total_bitboard = black_total_bitboard if white else white_total_bitboard
         total_bitboard = white_total_bitboard | black_total_bitboard
 
-        print(f'Pin bitboard: {pin_bitboard}')
         for piece in (white_pieces if white else black_pieces):
             index = int(piece.text)-1
             row, file = Utils.button_to_rowfile(piece)
@@ -555,9 +563,7 @@ class Backend():
             if Backend.check_index_overlap(white_king_bitboard if white else black_king_bitboard, s_index):
                 if flag in ['c', 'e']:
                     sname, tname = Backend.make_unmake_move(s_index, t_index, flag, white)
-                    print(white_queen_bitboard)
                     lm = Backend.get_all_legal_moves(not white, attsquares=True)
-                    print(lm)
                     if np.where(lm == t_index)[0].size == 0:
                         possible_moves[p_counter] = move
                         p_counter += 1
@@ -588,7 +594,6 @@ class Backend():
                 possible_moves[p_counter] = move
                 p_counter += 1
                 continue
-            print(s_index, t_index)
         legal_moves = np.resize(possible_moves, p_counter)
         
         # NOTE: Redundant
@@ -600,7 +605,6 @@ class Backend():
             index_to = int(movestr[6:12], 2)
             flag = list(legal_moves_flags.keys())[list(legal_moves_flags.values()).index(int(movestr[12:], 2))]
             testee.append(f'{index_from}{index_to}{flag}')
-        print(testee)
         return legal_moves
 
     def legal_moves_per_square(moves:np.ndarray) -> None:
@@ -619,21 +623,13 @@ class Backend():
     
     def make_unmake_move(s_index:int, t_index:int, flag:str, white:bool, sname=None, tname=None) -> tuple[str, str] | None:
         global white_king_bitboard, black_king_bitboard, white_queen_bitboard, black_queen_bitboard, white_bishop_bitboard, black_bishop_bitboard, white_knight_bitboard, black_knight_bitboard, white_rook_bitboard, black_rook_bitboard, white_pawn_bitboard, black_pawn_bitboard
-        global white_total_bitboard, black_total_bitboard
+        global white_total_bitboard, black_total_bitboard, piece_bitboards
+        global piece_bitboards
         s_pieceBitboard, t_pieceBitboard = None, None
-        if not (sname and tname):
+        if not (sname or tname):
             snamee, tnamee = None, None
-            piece_bitboards = [
-                'white_king_bitboard', 'black_king_bitboard',
-                'white_queen_bitboard', 'black_queen_bitboard',
-                'white_bishop_bitboard', 'black_bishop_bitboard',
-                'white_knight_bitboard', 'black_knight_bitboard',
-                'white_rook_bitboard', 'black_rook_bitboard',
-                'white_pawn_bitboard', 'black_pawn_bitboard'
-            ]
             for name in piece_bitboards:
                 board = globals()[name]
-                print(name, board)
                 if Backend.check_index_overlap(board, s_index):
                     s_pieceBitboard = board
                     snamee = name
@@ -641,9 +637,10 @@ class Backend():
                     t_pieceBitboard = board
                     tnamee = name
         else:
-            s_pieceBitboard = globals()[sname]
-            t_pieceBitboard = globals()[tname]
-        print(f's: {s_pieceBitboard}, t:{t_pieceBitboard}')
+            if sname:
+                s_pieceBitboard = globals()[sname]
+            if tname:
+                t_pieceBitboard = globals()[tname]
         if flag in ['c', 'e']:
             # Capture
             s_pieceBitboard = Utils.toggle_bit(s_pieceBitboard, s_index)
@@ -678,8 +675,7 @@ class Backend():
             # Normal move
             s_pieceBitboard = Utils.toggle_bit(s_pieceBitboard, s_index)
             s_pieceBitboard = Utils.toggle_bit(s_pieceBitboard, t_index)
-        print(f'result:\ns:{s_pieceBitboard}, t:{t_pieceBitboard}')
-        if sname and tname:
+        if sname or tname:
             globals()[sname] = deepcopy(s_pieceBitboard)
             globals()[tname] = deepcopy(t_pieceBitboard)
             white_total_bitboard = deepcopy(white_bishop_bitboard | white_king_bitboard | white_knight_bitboard | white_rook_bitboard | white_queen_bitboard | white_pawn_bitboard)
@@ -782,17 +778,18 @@ class Backend():
 
     def attack_pin_bitboard(white:bool):
         global attacking_bitboard, king_attack_bitboard, pin_bitboard
-        typesLayout = []
-        for row in piecesLayout:
-            typesLayout.extend([type(s) for s in row])
+        typesLayout = {}
+        for i in range(64):
+            pieceType = Utils.get_piece_type(i)
+            if pieceType is not None:
+                typesLayout[i] = pieceType
         
         for attsquare in Backend.get_all_legal_moves(not white, attsquares=True):
             attsquare = attsquare.item()
             attacking_bitboard |= (1<<attsquare)
 
         # NOTE: Only check sliding pieces (bishop, rook, queen)
-        # This array is 64 in length, so not the 8x8
-        pin_check = [i for i,square in enumerate(typesLayout) if issubclass(square, (b.Bishop, b.Rook, b.Queen) if white else (w.Bishop, w.Rook, w.Queen))]
+        pin_check = [i for i,square in typesLayout.items() if issubclass(square, (b.Bishop, b.Rook, b.Queen) if white else (w.Bishop, w.Rook, w.Queen))]
         if not pin_check:
             pin_bitboard = 0
             return
@@ -804,7 +801,7 @@ class Backend():
     def get_pin_along_sliding_piece(white:bool, square:int, king_attack=False) -> int:
         pinnypinny = 0
         row, file = Utils.index_to_rowfile(square)
-        pieceClass = piecesLayout[row][file]
+        pieceClass = Utils.get_piece_type(square)()
         color_total_bitboard = white_total_bitboard if white else black_total_bitboard
         opponent_total_bitboard = black_total_bitboard if white else white_total_bitboard
         opponent_king_bitboard = black_king_bitboard if white else white_king_bitboard
@@ -865,6 +862,18 @@ class Utils():
     
     def rowfile_to_index(row:int, file:int) -> int:
         return 8*row+file
+    
+    def move_to_fi_ti_flag(move:int) -> tuple[int, int, str]:
+        global legal_moves_flags
+        movestr = f'{move:016b}'
+        return int(movestr[0:6], 2), int(movestr[6:12], 2), list(legal_moves_flags.keys())[list(legal_moves_flags.values()).index(int(movestr[12:], 2))]
+    
+    def get_piece_type(i:int):
+        global piece_bitboards, bitboard_name_to_pieceClass
+        for name in piece_bitboards:
+            board = globals()[name]
+            if Backend.check_index_overlap(board, i):
+                return type(bitboard_name_to_pieceClass[name])
 
     def pretty_print_position():
         pieces_unicode={
@@ -882,11 +891,12 @@ class Utils():
             b.Bishop: '♗'
         }
         pretty = '-------------------------\n'
-        for row in piecesLayout:
-            for square in row:
-                if square:
-                    pretty += f'|{pieces_unicode[type(square)]} '
-                else:
-                    pretty += '|  '
-            pretty += '|\n-------------------------\n'
+        for i in range(64):
+            pieceType = Utils.get_piece_type(i)
+            if pieceType:
+                pretty += f'|{pieces_unicode[pieceType]} '
+            else:
+                pretty += '|  '
+            if i % 8 == 7:
+                pretty += '|\n-------------------------\n'
         print(pretty, end='\r')
