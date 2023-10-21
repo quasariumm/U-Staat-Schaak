@@ -2,7 +2,6 @@ import logic
 from pieces import White as w
 from pieces import Black as b
 
-from copy import deepcopy
 import math, random, time
 
 WHITE = 1
@@ -224,7 +223,6 @@ class Calculations():
         return max(mat_less_than_start/mat_endgame_start, 1)
     
     def evaluate_piece_square_tables(white, endgameWeight):
-        # TODO: Endgame blend pawn table
         value = 0
         white_pieces, black_pieces = logic.Backend.black_and_white_pieces_list()
         for piece in (white_pieces if white else black_pieces):

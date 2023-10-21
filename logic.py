@@ -3,6 +3,7 @@ import numpy as np
 from collections import Counter
 from copy import deepcopy
 from threading import Thread, Event
+import multiprocessing as mp
 
 from pieces import White as w
 from pieces import Black as b
@@ -256,11 +257,18 @@ class Frontend():
                 print('mate' if mate else 'not mate')
                 Frontend.update_move_list(movee, pieceClass)
                 # NOTE: Test
-                Thread(target= lambda check=check: Calculations.minimax(depth=4, alpha=-math.inf, beta=math.inf, max_player=True if white_to_move else False, max_color=WHITE, check=check, begin_d=4)).start()
+                mp.Process(target=Calculations.minimax, kwargs={'depth': 4, 'alpha':-math.inf, 'beta':math.inf, 'max_player':white_to_move, 'max_color':WHITE, 'check':check, 'begin_d':4}).start()
+                # Thread(target= lambda check=check: Calculations.minimax(depth=4, alpha=-math.inf, beta=math.inf, max_player=True if white_to_move else False, max_color=WHITE, check=check, begin_d=4)).start()
                 return 200
             else:
                 return 404
     
+    def start_bot():
+        
+        with mp.Manager() as manager:
+            shared_dict = manager.dict()
+
+
     def test_bot_callback(result):
         print(result)
     
