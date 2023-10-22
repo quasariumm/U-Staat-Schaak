@@ -151,7 +151,7 @@ class ChessApp(MDApp):
     def build(self):
         self.theme_cls.theme_style = 'Dark'
         Window.bind(on_request_close=self.exit_promotion)
-        return Builder.load_file(os.path.dirname(__file__) + '\\app.kv')        
+        return Builder.load_file(os.path.dirname(__file__) + '\\app.kv')
 
 if __name__ == "__main__":
     app = ChessApp()

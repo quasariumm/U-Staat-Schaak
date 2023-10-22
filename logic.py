@@ -8,8 +8,8 @@ from pieces import White as w
 from pieces import Black as b
 from kivy.utils import get_color_from_hex
 from kivy.uix.button import Button
-from kivymd.uix.list import OneLineListItem
 from kivy.uix.popup import Popup
+from kivymd.uix.list import OneLineListItem
 
 from app import board_prim, board, piecesLayout, ChessPromotionUI
 from pieces import White as w
@@ -133,8 +133,8 @@ class Frontend():
         global selected
         global tempBackground_color
         global white_to_move
-        global check, mate, white_king_index, black_king_index
         global movenum
+        global check, mate, white_king_index, black_king_index
         global white_king_moved, white_krook_moved, white_qrook_moved, black_king_moved, black_krook_moved, black_qrook_moved
         global legal_moves_cache
         row, file = Utils.button_to_rowfile(check_piece)
