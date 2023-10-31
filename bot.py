@@ -135,16 +135,17 @@ piece_square_tables = {
 }
 
 class Calculations():
-    def minimax(depth:int, alpha:float, beta:float, max_player:bool, max_color:int, check:bool, begin_d:int):
+    def minimax(depth:int, alpha:float, beta:float, max_player:bool, max_color:int, check:bool, begin_d:int, lastmove:int=None) -> tuple[str|int|None, float]:
         if depth == 0:
             return None, Calculations.evaluation(max_color)
         moves = logic.Backend.get_all_legal_moves(max_player)
         moves = Calculations.moveOrdering(moves)
-        if len(moves) == 0:
-            if check:
-                print(f'mate in {depth}')
+        if lastmove:
+            mate, draw = logic.Backend.mate_and_draw(lastmove)
+            if mate:
                 return depth, math.inf * (WHITE if max_player else BLACK)
-            return 'stalemate', 0 # Stalemate
+            if draw != '':
+                return draw, 0
         best_move = random.choice(moves)
         if max_player:
             max_eval = -math.inf
@@ -156,7 +157,7 @@ class Calculations():
                 logic.Backend.attack_pin_bitboard(False)
                 check = logic.Backend.check_index_overlap(logic.attacking_bitboard, int(math.log2(logic.white_king_bitboard)))
                 logic.check = check
-                current_eval = Calculations.minimax(depth-1, alpha, beta, False, -max_color, check=check, begin_d=begin_d)
+                current_eval = Calculations.minimax(depth-1, alpha, beta, False, -max_color, check=check, begin_d=begin_d, lastmove=move)
                 logic.Backend.make_unmake_move(fi, ti, flag, True, sname=sname, tname=tname)
                 if current_eval[1] > max_eval:
                     max_eval = current_eval[1]
@@ -176,7 +177,7 @@ class Calculations():
                 logic.Backend.attack_pin_bitboard(True)
                 check = logic.Backend.check_index_overlap(logic.attacking_bitboard, int(math.log2(logic.white_king_bitboard)))
                 logic.check = check
-                current_eval = Calculations.minimax(depth-1, alpha, beta, True, -max_color, check=check, begin_d=begin_d)
+                current_eval = Calculations.minimax(depth-1, alpha, beta, True, -max_color, check=check, begin_d=begin_d, lastmove=move)
                 logic.Backend.make_unmake_move(fi, ti, flag, False, sname=sname, tname=tname)
                 if current_eval[1] < max_eval:
                     max_eval = current_eval[1]

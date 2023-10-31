@@ -5,8 +5,6 @@ from copy import deepcopy
 from threading import Thread, Event
 import multiprocessing as mp
 
-from pieces import White as w
-from pieces import Black as b
 from kivy.utils import get_color_from_hex
 from kivy.uix.button import Button
 from kivymd.uix.list import OneLineListItem
@@ -40,8 +38,11 @@ black_king_moved = False
 
 check = False
 mate = False
+repitition = 0
+fiftymoverule = 0
 white_king_index = 4
 black_king_index = 60
+en_passant_target_index = 0
 
 #      __    _ __  __                         __    
 #     / /_  (_) /_/ /_  ____  ____ __________/ /____
@@ -172,7 +173,7 @@ class Frontend():
             popup.open()
             Thread(target=Frontend.promotionMove, args=[check_piece, dest, popup]).start()
             return 200
-        pieceClass = piecesLayout[row][file]
+        pieceClass = Utils.get_piece_type(8*row+file)()
 
         try:
             moves = legal_moves_per_square[int(selected.text)-1]
@@ -251,13 +252,15 @@ class Frontend():
                 print('check' if check else 'not check')
                 Frontend.clear_legal_moves_indicators()
                 movenum+=1
+                Frontend.update_move_list(movee, pieceClass)
                 lm = Backend.get_all_legal_moves(white_to_move)
                 Backend.legal_moves_per_square(lm)
-                mate = check and not legal_moves_per_square
-                print('mate' if mate else 'not mate')
-                Frontend.update_move_list(movee, pieceClass)
+                # NOTE: The draw local variable gives the type of draw (Stalemate, 50-move rule, threefold repitition)
+                mate, draw = Backend.mate_and_draw(movee)
+                print(mate, draw)
+                print(Utils.position_to_fen()[0])
                 # NOTE: Test
-                mp.Process(target=Calculations.minimax, kwargs={'depth': 4, 'alpha':-math.inf, 'beta':math.inf, 'max_player':white_to_move, 'max_color':WHITE, 'check':check, 'begin_d':4}).start()
+                # mp.Process(target=Calculations.minimax, kwargs={'depth': 4, 'alpha':-math.inf, 'beta':math.inf, 'max_player':white_to_move, 'max_color':WHITE, 'check':check, 'begin_d':4}).start()
                 # Thread(target= lambda check=check: Calculations.minimax(depth=4, alpha=-math.inf, beta=math.inf, max_player=True if white_to_move else False, max_color=WHITE, check=check, begin_d=4)).start()
                 return 200
             else:
@@ -294,7 +297,7 @@ class Frontend():
         popup.dismiss()
         Frontend.reset_event()
         row, file = Utils.button_to_rowfile(selected)
-        check_pieceClass = piecesLayout[row][file]
+        check_pieceClass = Utils.get_piece_type(8*row+file)()
         try:
             moves = legal_moves_per_square[int(selected.text)-1]
             moves_otherformat = [int(f'{m:016b}'[0:12], 2) for m in moves]
@@ -315,11 +318,12 @@ class Frontend():
                 print('check' if check else 'not check')
                 Frontend.clear_legal_moves_indicators()
                 movenum+=1
+                Frontend.update_move_list(movee, check_pieceClass)
                 lm = Backend.get_all_legal_moves(white_to_move)
                 Backend.legal_moves_per_square(lm)
-                mate = check and not legal_moves_per_square
-                print('mate' if mate else 'not mate')
-                Frontend.update_move_list(movee, check_pieceClass)
+                # NOTE: The draw local variable gives the type of draw (Stalemate, 50-move rule, threefold repitition)
+                mate, draw = Backend.mate_and_draw(movee)
+                print(mate, draw)
                 return 200
         else:
             return 404
@@ -423,9 +427,11 @@ class Backend():
         global black_total_bitboard, white_total_bitboard, attacking_bitboard, king_attack_bitboard, pin_bitboard
         global check
         global bitboard_name_to_pieceClass
+        global en_passant_target_index
 
         legal_moves = np.zeros(shape=218, dtype=np.int32)
         counter = 0
+        en_passant_target_index = 0
         white_pieces, black_pieces = Backend.black_and_white_pieces_list()
         multiplier = 1 if white else -1
         color_total_bitboard = black_total_bitboard if white else white_total_bitboard
@@ -444,11 +450,14 @@ class Backend():
 
             if issubclass(type(pieceClass), (w.Pawn, b.Pawn)):
                 # En passant
-                # FIXME: en passant doesn't work
+                # FIXME: moves list doesn't properly update
                 if len(moves_list) > 0:
+                    print(moves_list)
                     lastmove = moves_list[-1]
                     lastmovestr = f'{lastmove:016b}'
                     lmfrom, lmto = int(lastmovestr[0:6], 2), int(lastmovestr[6:12], 2) # lm is an abbreviation for last move
+                    print(lmfrom, lmto)
+                    print(lmfrom-lmto)
                     lmtorow, lmtofile = Utils.index_to_rowfile(lmto)
                     lmpieceType = None
                     for name in list(bitboard_name_to_pieceClass.keys()):
@@ -458,10 +467,12 @@ class Backend():
                     if Backend.check_index_overlap(black_pawn_bitboard if white else white_pawn_bitboard, index+1) and file < 7 and abs(lmfrom - lmto) == 16 and issubclass(type(lmpieceType), (w.Pawn, b.Pawn)) and abs(lmtofile-file) == 1:
                         ofile, orow = pieceClass.movement[2][0]
                         legal_moves[counter] = Backend.move_to_int(row, file, row+orow, file+ofile, legal_moves_flags['e'], attsquares)
+                        en_passant_target_index = 8*(row+orow)+(file+ofile)
                         counter += 1
-                    elif Backend.check_index_overlap(black_pawn_bitboard if white else white_pawn_bitboard, index-1) and file > 0 and abs(lmfrom - lmto) == 16 and issubclass(type(lmpieceType), (w.Pawn, b.Pawn)) and abs(lmtofile-file) == 1:
+                    if Backend.check_index_overlap(black_pawn_bitboard if white else white_pawn_bitboard, index-1) and file > 0 and abs(lmfrom - lmto) == 16 and issubclass(type(lmpieceType), (w.Pawn, b.Pawn)) and abs(lmtofile-file) == 1:
                         ofile, orow = pieceClass.movement[3][0]
                         legal_moves[counter] = Backend.move_to_int(row, file, row+orow, file+ofile, legal_moves_flags['e'], attsquares)
+                        en_passant_target_index = 8*(row+orow)+(file+ofile)
                         counter += 1
                 # Capture
                 if Backend.check_index_overlap(color_total_bitboard, index+(9 if white else -7)) and file < 7:
@@ -628,6 +639,20 @@ class Backend():
             moves_dict[s_index] = [move]
         legal_moves_per_square = deepcopy(moves_dict)
         return
+    
+    def mate_and_draw(move:int) -> tuple[bool, str]:
+        global check, legal_moves_per_square, repitition, fiftymoverule
+        if check and not legal_moves_per_square:
+            return True, ''
+        elif not legal_moves_per_square:
+            return False, 'Stalemate'
+        _, ti, flag = Utils.move_to_fi_ti_flag(move)
+        if not flag in ['c', 'e', 'qq', 'qr', 'qb', 'qn'] or not issubclass(Utils.get_piece_type(ti), (w.Pawn, b.Pawn)):
+            fiftymoverule += 1
+        if fiftymoverule >= 50:
+            return False, '50-move rule'
+        # TODO: repitition
+        return False, ''
     
     def make_unmake_move(s_index:int, t_index:int, flag:str, white:bool, sname=None, tname=None) -> tuple[str, str] | None:
         global white_king_bitboard, black_king_bitboard, white_queen_bitboard, black_queen_bitboard, white_bishop_bitboard, black_bishop_bitboard, white_knight_bitboard, black_knight_bitboard, white_rook_bitboard, black_rook_bitboard, white_pawn_bitboard, black_pawn_bitboard
@@ -908,3 +933,51 @@ class Utils():
             if i % 8 == 7:
                 pretty += '|\n-------------------------\n'
         print(pretty, end='\r')
+
+    def position_to_fen() -> tuple[str, str]:
+        global en_passant_target_index, fiftymoverule
+        '''
+        Gives the FEN of the current position. Returns [FEN, FEN with only the position]
+        '''
+        pieces_fen={
+            w.King: 'K',
+            w.Knight: 'N',
+            w.Pawn: 'P',
+            w.Queen: 'Q',
+            w.Rook: 'R',
+            w.Bishop: 'B',
+            b.King: 'k',
+            b.Knight: 'n',
+            b.Pawn: 'p',
+            b.Queen: 'q',
+            b.Rook: 'r',
+            b.Bishop: 'b'
+        }
+        file_letters = 'abcdefgh'
+        fen = ''
+        empty_count = 0
+        for i in range(64):
+            if i%8==0 and i != 63 and i != 0:
+                if empty_count > 0:
+                    fen += str(empty_count)
+                    empty_count = 0
+                fen += '/'
+            pieceType = Utils.get_piece_type((56-8*(i//8))+i%8)
+            if pieceType:
+                if empty_count > 0:
+                    fen += str(empty_count)
+                    empty_count = 0
+                fen += pieces_fen[pieceType]
+            else:
+                empty_count += 1
+        posfen = deepcopy(fen)
+        castle = '-'
+        if not white_king_moved:
+            if not black_king_moved: castle = 'KQkq'
+            else: castle = 'KQ'
+        elif not black_king_moved:
+            castle = 'kq'
+        erow, efile = Utils.index_to_rowfile(en_passant_target_index)
+        enpassant = file_letters[efile] + str(erow) if en_passant_target_index != 0 else '-'
+        fen += f" {'w' if white_to_move else 'b'} {castle} {enpassant} {fiftymoverule} {movenum//2}"
+        return fen, posfen
