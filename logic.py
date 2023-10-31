@@ -14,7 +14,6 @@ from kivy.clock import mainthread
 from app import board_prim, board, piecesLayout, ChessPromotionUI
 from pieces import White as w
 from pieces import Black as b
-from threading import Thread
 from bot import Calculations, Misc, WHITE
 
 movenum=0
@@ -257,7 +256,7 @@ class Frontend():
                 Backend.legal_moves_per_square(lm)
                 # NOTE: The draw local variable gives the type of draw (Stalemate, 50-move rule, threefold repitition)
                 mate, draw = Backend.mate_and_draw(movee)
-                print(mate, draw)
+                print(f'mate: {mate}, draw: {draw}')
                 print(Utils.position_to_fen()[0])
                 # NOTE: Test
                 # mp.Process(target=Calculations.minimax, kwargs={'depth': 4, 'alpha':-math.inf, 'beta':math.inf, 'max_player':white_to_move, 'max_color':WHITE, 'check':check, 'begin_d':4}).start()
@@ -375,14 +374,13 @@ class Frontend():
             promote='=B'
         elif flag in ['pn', 'qn']:
             promote='=N'
-        newformat=f"{first}{'x' if (flag=='c' or flag[0] == 'q') else ''}{file_letters[file]}{row+1}{promote}{last}"
+        newformat=f"{first}{'x' if (flag in ['c', 'e'] or flag[0] == 'q') else ''}{file_letters[file]}{row+1}{promote}{last}"
         return newformat
 
-    @mainthread
-    def update_move_list(move, pieceClass):
+    def update_move_list(move:int, pieceClass) -> None:
         global movenum, list_items, moves_list
-        newformat = Frontend.move_other_format(move, pieceClass)
         moves_list.append(move)
+        newformat = Frontend.move_other_format(move, pieceClass)
         if movenum%2==1:
             li=OneLineListItem(text=f"{math.ceil(movenum/2)}. {newformat}")
             move_list.add_widget(widget=li)
@@ -450,26 +448,22 @@ class Backend():
 
             if issubclass(type(pieceClass), (w.Pawn, b.Pawn)):
                 # En passant
-                # FIXME: moves list doesn't properly update
                 if len(moves_list) > 0:
-                    print(moves_list)
                     lastmove = moves_list[-1]
                     lastmovestr = f'{lastmove:016b}'
                     lmfrom, lmto = int(lastmovestr[0:6], 2), int(lastmovestr[6:12], 2) # lm is an abbreviation for last move
-                    print(lmfrom, lmto)
-                    print(lmfrom-lmto)
-                    lmtorow, lmtofile = Utils.index_to_rowfile(lmto)
+                    _, lmtofile = Utils.index_to_rowfile(lmto)
                     lmpieceType = None
                     for name in list(bitboard_name_to_pieceClass.keys()):
                         board = globals()[name]
                         if Backend.check_index_overlap(board, lmto):
                             lmpieceType = bitboard_name_to_pieceClass[name]
-                    if Backend.check_index_overlap(black_pawn_bitboard if white else white_pawn_bitboard, index+1) and file < 7 and abs(lmfrom - lmto) == 16 and issubclass(type(lmpieceType), (w.Pawn, b.Pawn)) and abs(lmtofile-file) == 1:
+                    if Backend.check_index_overlap(black_pawn_bitboard if white else white_pawn_bitboard, index+1) and file < 7 and abs(lmfrom - lmto) == 16 and issubclass(type(lmpieceType), (w.Pawn, b.Pawn)) and lmtofile-file == 1:
                         ofile, orow = pieceClass.movement[2][0]
                         legal_moves[counter] = Backend.move_to_int(row, file, row+orow, file+ofile, legal_moves_flags['e'], attsquares)
                         en_passant_target_index = 8*(row+orow)+(file+ofile)
                         counter += 1
-                    if Backend.check_index_overlap(black_pawn_bitboard if white else white_pawn_bitboard, index-1) and file > 0 and abs(lmfrom - lmto) == 16 and issubclass(type(lmpieceType), (w.Pawn, b.Pawn)) and abs(lmtofile-file) == 1:
+                    if Backend.check_index_overlap(black_pawn_bitboard if white else white_pawn_bitboard, index-1) and file > 0 and abs(lmfrom - lmto) == 16 and issubclass(type(lmpieceType), (w.Pawn, b.Pawn)) and lmtofile-file == -1:
                         ofile, orow = pieceClass.movement[3][0]
                         legal_moves[counter] = Backend.move_to_int(row, file, row+orow, file+ofile, legal_moves_flags['e'], attsquares)
                         en_passant_target_index = 8*(row+orow)+(file+ofile)
@@ -647,7 +641,9 @@ class Backend():
         elif not legal_moves_per_square:
             return False, 'Stalemate'
         _, ti, flag = Utils.move_to_fi_ti_flag(move)
-        if not flag in ['c', 'e', 'qq', 'qr', 'qb', 'qn'] or not issubclass(Utils.get_piece_type(ti), (w.Pawn, b.Pawn)):
+        if flag in ['c', 'e', 'qq', 'qr', 'qb', 'qn'] or issubclass(Utils.get_piece_type(ti), (w.Pawn, b.Pawn)):
+            fiftymoverule = 0
+        else:
             fiftymoverule += 1
         if fiftymoverule >= 50:
             return False, '50-move rule'
@@ -979,5 +975,5 @@ class Utils():
             castle = 'kq'
         erow, efile = Utils.index_to_rowfile(en_passant_target_index)
         enpassant = file_letters[efile] + str(erow) if en_passant_target_index != 0 else '-'
-        fen += f" {'w' if white_to_move else 'b'} {castle} {enpassant} {fiftymoverule} {movenum//2}"
+        fen += f" {'w' if white_to_move else 'b'} {castle} {enpassant} {fiftymoverule} {math.ceil((movenum+1)/2)}"
         return fen, posfen
