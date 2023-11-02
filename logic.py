@@ -163,15 +163,6 @@ class Frontend():
         global legal_moves_per_square, legal_moves_flags
         row, file = Utils.button_to_rowfile(check_piece)
         destrow, destfile = Utils.button_to_rowfile(dest)
-        if (destrow == (7 if white_to_move else 0)) and issubclass(type(piecesLayout[row][file]), (w.Pawn, b.Pawn)):
-            # Show the promotion GUI
-            promoteUI = ChessPromotionUI()
-            popup = Popup(title='Select piece type', content=promoteUI, size_hint=(0.25, 0.35))
-            promoteUI.change_color(piecesLayout[row][file])
-            popup.bind(on_dismiss=promoteUI.cancel)
-            popup.open()
-            Thread(target=Frontend.promotionMove, args=[check_piece, dest, popup]).start()
-            return 200
         pieceClass = Utils.get_piece_type(8*row+file)()
 
         try:
@@ -182,6 +173,15 @@ class Frontend():
             return
         if moves:
             if move in moves_otherformat:
+                if (destrow == (7 if white_to_move else 0)) and issubclass(type(piecesLayout[row][file]), (w.Pawn, b.Pawn)):
+                    # Show the promotion GUI
+                    promoteUI = ChessPromotionUI()
+                    popup = Popup(title='Select piece type', content=promoteUI, size_hint=(0.25, 0.35))
+                    promoteUI.change_color(piecesLayout[row][file])
+                    popup.bind(on_dismiss=promoteUI.cancel)
+                    popup.open()
+                    Thread(target=Frontend.promotionMove, args=[check_piece, dest, popup]).start()
+                    return 200
                 movee = moves[moves_otherformat.index(move)]
                 flag = list(legal_moves_flags.keys())[list(legal_moves_flags.values()).index(int(f'{movee:016b}'[12:], 2))]
                 if flag == 'e':
@@ -258,15 +258,15 @@ class Frontend():
         Backend.update_bitboards(white_to_move)
         check = Backend.check_index_overlap(attacking_bitboard, white_king_index if white_to_move else black_king_index)
         print('check' if check else 'not check')
+        # NOTE: The draw local variable gives the type of draw (Stalemate, 50-move rule, threefold repitition)
+        mate, draw = Backend.mate_and_draw(move)
+        print(f'mate: {mate}, draw: {draw}')
+        print(Utils.position_to_fen()[0])
         Frontend.clear_legal_moves_indicators()
         movenum+=1
         Frontend.update_move_list(move, pieceClass)
         lm = Backend.get_all_legal_moves(white_to_move)
         Backend.legal_moves_per_square(lm)
-        # NOTE: The draw local variable gives the type of draw (Stalemate, 50-move rule, threefold repitition)
-        mate, draw = Backend.mate_and_draw(move)
-        print(f'mate: {mate}, draw: {draw}')
-        print(Utils.position_to_fen()[0])
         # NOTE: Test
         # mp.Process(target=Calculations.minimax, kwargs={'depth': 4, 'alpha':-math.inf, 'beta':math.inf, 'max_player':white_to_move, 'max_color':WHITE, 'check':check, 'begin_d':4}).start()
         # Thread(target= lambda check=check: Calculations.minimax(depth=4, alpha=-math.inf, beta=math.inf, max_player=True if white_to_move else False, max_color=WHITE, check=check, begin_d=4)).start()
