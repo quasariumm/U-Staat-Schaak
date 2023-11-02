@@ -351,7 +351,6 @@ class Clock():
             timeformat= '{:02d}:{:02d}'.format(mins,secs)
             self.clockWidget.text = timeformat
             time.sleep(0.02)
-            print(timeformat, end='\r')
 
     def toggle(self,t=0):
         if not self.started:
