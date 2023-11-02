@@ -258,15 +258,15 @@ class Frontend():
         Backend.update_bitboards(white_to_move)
         check = Backend.check_index_overlap(attacking_bitboard, white_king_index if white_to_move else black_king_index)
         print('check' if check else 'not check')
+        Frontend.clear_legal_moves_indicators()
+        movenum+=1
+        lm = Backend.get_all_legal_moves(white_to_move)
+        Backend.legal_moves_per_square(lm)
         # NOTE: The draw local variable gives the type of draw (Stalemate, 50-move rule, threefold repitition)
         mate, draw = Backend.mate_and_draw(move)
         print(f'mate: {mate}, draw: {draw}')
         print(Utils.position_to_fen()[0])
-        Frontend.clear_legal_moves_indicators()
-        movenum+=1
         Frontend.update_move_list(move, pieceClass)
-        lm = Backend.get_all_legal_moves(white_to_move)
-        Backend.legal_moves_per_square(lm)
         # NOTE: Test
         # mp.Process(target=Calculations.minimax, kwargs={'depth': 4, 'alpha':-math.inf, 'beta':math.inf, 'max_player':white_to_move, 'max_color':WHITE, 'check':check, 'begin_d':4}).start()
         # Thread(target= lambda check=check: Calculations.minimax(depth=4, alpha=-math.inf, beta=math.inf, max_player=True if white_to_move else False, max_color=WHITE, check=check, begin_d=4)).start()
