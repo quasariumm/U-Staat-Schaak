@@ -245,25 +245,31 @@ class Frontend():
                         black_qrook_moved = True
                     elif destfile == 7 and not black_krook_moved:
                         black_krook_moved = True
-                Backend.update_pieces_layout()
-                Backend.update_bitboards(white_to_move)
-                check = Backend.check_index_overlap(attacking_bitboard, white_king_index if white_to_move else black_king_index)
-                print('check' if check else 'not check')
-                Frontend.clear_legal_moves_indicators()
-                movenum+=1
-                Frontend.update_move_list(movee, pieceClass)
-                lm = Backend.get_all_legal_moves(white_to_move)
-                Backend.legal_moves_per_square(lm)
-                # NOTE: The draw local variable gives the type of draw (Stalemate, 50-move rule, threefold repitition)
-                mate, draw = Backend.mate_and_draw(movee)
-                print(f'mate: {mate}, draw: {draw}')
-                print(Utils.position_to_fen()[0])
-                # NOTE: Test
-                # mp.Process(target=Calculations.minimax, kwargs={'depth': 4, 'alpha':-math.inf, 'beta':math.inf, 'max_player':white_to_move, 'max_color':WHITE, 'check':check, 'begin_d':4}).start()
-                # Thread(target= lambda check=check: Calculations.minimax(depth=4, alpha=-math.inf, beta=math.inf, max_player=True if white_to_move else False, max_color=WHITE, check=check, begin_d=4)).start()
+                Frontend.move_rest(movee, pieceClass)
                 return 200
             else:
                 return 404
+    
+    @mainthread
+    def move_rest(move:int, pieceClass) -> None:
+        global movenum, check, mate
+        global attacking_bitboard, white_king_index, black_king_index
+        Backend.update_pieces_layout()
+        Backend.update_bitboards(white_to_move)
+        check = Backend.check_index_overlap(attacking_bitboard, white_king_index if white_to_move else black_king_index)
+        print('check' if check else 'not check')
+        Frontend.clear_legal_moves_indicators()
+        movenum+=1
+        Frontend.update_move_list(move, pieceClass)
+        lm = Backend.get_all_legal_moves(white_to_move)
+        Backend.legal_moves_per_square(lm)
+        # NOTE: The draw local variable gives the type of draw (Stalemate, 50-move rule, threefold repitition)
+        mate, draw = Backend.mate_and_draw(move)
+        print(f'mate: {mate}, draw: {draw}')
+        print(Utils.position_to_fen()[0])
+        # NOTE: Test
+        # mp.Process(target=Calculations.minimax, kwargs={'depth': 4, 'alpha':-math.inf, 'beta':math.inf, 'max_player':white_to_move, 'max_color':WHITE, 'check':check, 'begin_d':4}).start()
+        # Thread(target= lambda check=check: Calculations.minimax(depth=4, alpha=-math.inf, beta=math.inf, max_player=True if white_to_move else False, max_color=WHITE, check=check, begin_d=4)).start()
     
     def start_bot():
         
@@ -271,8 +277,11 @@ class Frontend():
             shared_dict = manager.dict()
 
 
-    def test_bot_callback(result):
-        print(result)
+    def test_bot_callback(result:tuple[int,float]):
+        fi, _, _ = Utils.move_to_fi_ti_flag(result[0])
+        piece_type = Utils.get_piece_type(fi)()
+        new_format = Frontend.move_other_format(result[0], piece_type)
+        print(new_format, result[1])
     
     def reset_event():
         global promotionStatus, promotionEvent
@@ -311,18 +320,7 @@ class Frontend():
                 selected.background_color = tempBackground_color
                 selected = None
                 white_to_move = not white_to_move
-                Backend.update_pieces_layout()
-                Backend.update_bitboards(white_to_move)
-                check = Backend.check_index_overlap(attacking_bitboard, white_king_index if white_to_move else black_king_index)
-                print('check' if check else 'not check')
-                Frontend.clear_legal_moves_indicators()
-                movenum+=1
-                Frontend.update_move_list(movee, check_pieceClass)
-                lm = Backend.get_all_legal_moves(white_to_move)
-                Backend.legal_moves_per_square(lm)
-                # NOTE: The draw local variable gives the type of draw (Stalemate, 50-move rule, threefold repitition)
-                mate, draw = Backend.mate_and_draw(movee)
-                print(mate, draw)
+                Frontend.move_rest(movee, check_pieceClass)
                 return 200
         else:
             return 404
@@ -469,7 +467,7 @@ class Backend():
                         en_passant_target_index = 8*(row+orow)+(file+ofile)
                         counter += 1
                 # Capture
-                if Backend.check_index_overlap(color_total_bitboard, index+(9 if white else -7)) and file < 7:
+                if (Backend.check_index_overlap(color_total_bitboard, index+(9 if white else -7)) or attsquares) and file < 7:
                     ofile, orow = pieceClass.movement[2][0]
                     if row+orow == (7 if white else 0):
                         # Take and promote
@@ -481,7 +479,7 @@ class Backend():
                     else:
                         legal_moves[counter] = Backend.move_to_int(row, file, row+orow, file+ofile, legal_moves_flags['c'], attsquares)
                         counter += 1
-                if Backend.check_index_overlap(color_total_bitboard, index+(7 if white else -9)) and file > 0:
+                if (Backend.check_index_overlap(color_total_bitboard, index+(7 if white else -9)) or attsquares) and file > 0:
                     ofile, orow = pieceClass.movement[3][0]
                     if row+orow == (7 if white else 0):
                         # Take and promote

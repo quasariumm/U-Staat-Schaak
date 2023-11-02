@@ -139,6 +139,12 @@ class Calculations():
         if depth == 0:
             return None, Calculations.evaluation(max_color)
         moves = logic.Backend.get_all_legal_moves(max_player)
+        print(moves)
+        if lastmove:
+            _, fi, _ = logic.Utils.move_to_fi_ti_flag(lastmove)
+            piece_type = logic.Utils.get_piece_type(fi)()
+            new_format = logic.Frontend.move_other_format(lastmove, piece_type)
+            print(new_format)
         moves = Calculations.moveOrdering(moves)
         if lastmove:
             mate, draw = logic.Backend.mate_and_draw(lastmove)
@@ -157,12 +163,16 @@ class Calculations():
                 logic.Backend.attack_pin_bitboard(False)
                 check = logic.Backend.check_index_overlap(logic.attacking_bitboard, int(math.log2(logic.white_king_bitboard)))
                 logic.check = check
-                current_eval = Calculations.minimax(depth-1, alpha, beta, False, -max_color, check=check, begin_d=begin_d, lastmove=move)
+                _,current_eval = Calculations.minimax(depth-1, alpha, beta, False, -max_color, check=check, begin_d=begin_d, lastmove=move)
                 logic.Backend.make_unmake_move(fi, ti, flag, True, sname=sname, tname=tname)
-                if current_eval[1] > max_eval:
-                    max_eval = current_eval[1]
+                if current_eval > max_eval:
+                    max_eval = current_eval
                     best_move = move
-                alpha = max(alpha, current_eval[1])
+                # NOTE: TEST
+                if depth == begin_d:
+                    logic.Frontend.test_bot_callback((move, max_eval))
+
+                alpha = max(alpha, current_eval)
                 if beta <= alpha:
                     break
             # Test callback
@@ -175,14 +185,18 @@ class Calculations():
                 logic.white_total_bitboard = logic.white_bishop_bitboard | logic.white_king_bitboard | logic.white_knight_bitboard | logic.white_rook_bitboard | logic.white_queen_bitboard | logic.white_pawn_bitboard
                 logic.black_total_bitboard = logic.black_bishop_bitboard | logic.black_king_bitboard | logic.black_knight_bitboard | logic.black_rook_bitboard | logic.black_queen_bitboard | logic.black_pawn_bitboard
                 logic.Backend.attack_pin_bitboard(True)
-                check = logic.Backend.check_index_overlap(logic.attacking_bitboard, int(math.log2(logic.white_king_bitboard)))
+                check = logic.Backend.check_index_overlap(logic.attacking_bitboard, int(math.log2(logic.black_king_bitboard)))
                 logic.check = check
-                current_eval = Calculations.minimax(depth-1, alpha, beta, True, -max_color, check=check, begin_d=begin_d, lastmove=move)
+                _,current_eval = Calculations.minimax(depth-1, alpha, beta, True, -max_color, check=check, begin_d=begin_d, lastmove=move)
                 logic.Backend.make_unmake_move(fi, ti, flag, False, sname=sname, tname=tname)
-                if current_eval[1] < max_eval:
-                    max_eval = current_eval[1]
+                if current_eval < max_eval:
+                    max_eval = current_eval
                     best_move = move
-                beta = min(beta, current_eval[1])
+                # NOTE: TEST
+                if depth == begin_d:
+                    logic.Frontend.test_bot_callback((move, current_eval))
+
+                beta = min(beta, current_eval)
                 if beta <= alpha:
                     break
             # Test callback
@@ -205,7 +219,7 @@ class Calculations():
                 black_score += weights[piece]
         return white_score, black_score
     
-    def evaluation(color):
+    def evaluation(color) -> int:
         piecesTypesList:list = Misc.piecesTypesList()
         white_eval, black_eval = Calculations.calculate_score(piecesTypesList)
 
@@ -221,7 +235,7 @@ class Calculations():
     def endgameWeight(mat_nopawns):
         mat_less_than_start = MATERIAL_START - mat_nopawns
         mat_endgame_start = MATERIAL_START - ENDGAME_MATERIAL_START
-        return max(mat_less_than_start/mat_endgame_start, 1)
+        return min(mat_less_than_start/mat_endgame_start, 1)
     
     def evaluate_piece_square_tables(white, endgameWeight):
         value = 0
