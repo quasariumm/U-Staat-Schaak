@@ -135,16 +135,18 @@ piece_square_tables = {
 }
 
 class Calculations():
-    def minimax(depth:int, alpha:float, beta:float, max_player:bool, max_color:int, check:bool, begin_d:int, lastmove:int=None) -> tuple[str|int|None, float]:
+    def minimax(depth:int, alpha:float, beta:float, max_player:bool, max_color:int, check:bool, begin_d:int, lastmove:int=None, linestr:str='') -> tuple[str|int|None, float]:
         if depth == 0:
             return None, Calculations.evaluation(max_color)
-        moves = logic.Backend.get_all_legal_moves(max_player)
-        print(moves)
+        moves = logic.Backend.get_all_legal_moves(max_player, last_move=lastmove, checkk=check)
         if lastmove:
             _, fi, _ = logic.Utils.move_to_fi_ti_flag(lastmove)
-            piece_type = logic.Utils.get_piece_type(fi)()
-            new_format = logic.Frontend.move_other_format(lastmove, piece_type)
-            print(new_format)
+            pieceClass = logic.Utils.get_piece_type(fi)()
+            new_format = logic.Frontend.move_other_format(lastmove, pieceClass)
+            # NOTE: uncomment for debugging
+            # print(logic.attacking_bitboard)
+            # print(f'King index: {int(math.log2(logic.white_king_bitboard if max_player else logic.black_king_bitboard))}')
+            # print(f'Current depth: {depth}\nLast move: {new_format}\nColor to move: {"white" if max_player else "black"}')
         moves = Calculations.moveOrdering(moves)
         if lastmove:
             mate, draw = logic.Backend.mate_and_draw(lastmove)
@@ -157,13 +159,28 @@ class Calculations():
             max_eval = -math.inf
             for move in moves:
                 fi, ti, flag = logic.Utils.move_to_fi_ti_flag(move)
-                sname, tname = logic.Backend.make_unmake_move(fi, ti, flag, True)
+                linestrr = linestr + f'-{fi:02},{ti:02},{flag},{"+" if check else "_"}'
+                # FIXME: En passant make_unmake_move
+                try:
+                    sname, tname = logic.Backend.make_unmake_move(fi, ti, flag, True)
+                except:
+                    print(fi, ti, flag)
+                    logic.Utils.pretty_print_position()
                 logic.white_total_bitboard = logic.white_bishop_bitboard | logic.white_king_bitboard | logic.white_knight_bitboard | logic.white_rook_bitboard | logic.white_queen_bitboard | logic.white_pawn_bitboard
                 logic.black_total_bitboard = logic.black_bishop_bitboard | logic.black_king_bitboard | logic.black_knight_bitboard | logic.black_rook_bitboard | logic.black_queen_bitboard | logic.black_pawn_bitboard
+                logic.attacking_bitboard = 0
+                logic.pin_bitboard = 0
+                logic.king_attack_bitboard = 0
                 logic.Backend.attack_pin_bitboard(False)
-                check = logic.Backend.check_index_overlap(logic.attacking_bitboard, int(math.log2(logic.white_king_bitboard)))
-                logic.check = check
-                _,current_eval = Calculations.minimax(depth-1, alpha, beta, False, -max_color, check=check, begin_d=begin_d, lastmove=move)
+                try:
+                    checkk = logic.Backend.check_index_overlap(logic.attacking_bitboard, int(math.log2(logic.black_king_bitboard)))
+                    logic.check = checkk
+                except ValueError:
+                    print(logic.black_king_bitboard)
+                    print(f'{lastmove:016b}')
+                    print(linestrr)
+                    logic.Utils.pretty_print_position()
+                _,current_eval = Calculations.minimax(depth-1, alpha, beta, False, -max_color, check=checkk, begin_d=begin_d, lastmove=move, linestr=linestrr)
                 logic.Backend.make_unmake_move(fi, ti, flag, True, sname=sname, tname=tname)
                 if current_eval > max_eval:
                     max_eval = current_eval
@@ -181,13 +198,27 @@ class Calculations():
             max_eval = math.inf
             for move in moves:
                 fi, ti, flag = logic.Utils.move_to_fi_ti_flag(move)
-                sname, tname = logic.Backend.make_unmake_move(fi, ti, flag, False)
+                linestrr = linestr + f'-{fi:02},{ti:02},{flag},{"+" if check else "_"}'
+                try:
+                    sname, tname = logic.Backend.make_unmake_move(fi, ti, flag, False)
+                except:
+                    print(fi, ti, flag)
+                    logic.Utils.pretty_print_position()
                 logic.white_total_bitboard = logic.white_bishop_bitboard | logic.white_king_bitboard | logic.white_knight_bitboard | logic.white_rook_bitboard | logic.white_queen_bitboard | logic.white_pawn_bitboard
                 logic.black_total_bitboard = logic.black_bishop_bitboard | logic.black_king_bitboard | logic.black_knight_bitboard | logic.black_rook_bitboard | logic.black_queen_bitboard | logic.black_pawn_bitboard
+                logic.attacking_bitboard = 0
+                logic.pin_bitboard = 0
+                logic.king_attack_bitboard = 0
                 logic.Backend.attack_pin_bitboard(True)
-                check = logic.Backend.check_index_overlap(logic.attacking_bitboard, int(math.log2(logic.black_king_bitboard)))
-                logic.check = check
-                _,current_eval = Calculations.minimax(depth-1, alpha, beta, True, -max_color, check=check, begin_d=begin_d, lastmove=move)
+                try:
+                    checkk = logic.Backend.check_index_overlap(logic.attacking_bitboard, int(math.log2(logic.white_king_bitboard)))
+                    logic.check = checkk
+                except ValueError:
+                    print(logic.black_king_bitboard)
+                    print(f'{lastmove:016b}')
+                    print(linestrr)
+                    logic.Utils.pretty_print_position()
+                _,current_eval = Calculations.minimax(depth-1, alpha, beta, True, -max_color, check=checkk, begin_d=begin_d, lastmove=move, linestr=linestrr)
                 logic.Backend.make_unmake_move(fi, ti, flag, False, sname=sname, tname=tname)
                 if current_eval < max_eval:
                     max_eval = current_eval

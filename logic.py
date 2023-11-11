@@ -14,7 +14,7 @@ from kivy.clock import mainthread
 from app import board_prim, board, piecesLayout, ChessPromotionUI
 from pieces import White as w
 from pieces import Black as b
-from bot import Calculations, Misc, WHITE
+from bot import Calculations, Misc, WHITE, BLACK
 
 movenum=0
 move_list = []
@@ -112,6 +112,9 @@ moves_list = []
 promotionStatus = 0
 promotionType = ''
 promotionEvent = Event()
+
+bot_on = True
+bot_color = WHITE
 
 class Tests():
     pass
@@ -254,6 +257,7 @@ class Frontend():
     def move_rest(move:int, pieceClass) -> None:
         global movenum, check, mate
         global attacking_bitboard, white_king_index, black_king_index
+        global bot_color, bot_on, white_to_move
         Backend.update_pieces_layout()
         Backend.update_bitboards(white_to_move)
         check = Backend.check_index_overlap(attacking_bitboard, white_king_index if white_to_move else black_king_index)
@@ -269,13 +273,9 @@ class Frontend():
         Frontend.update_move_list(move, pieceClass)
         # NOTE: Test
         # mp.Process(target=Calculations.minimax, kwargs={'depth': 4, 'alpha':-math.inf, 'beta':math.inf, 'max_player':white_to_move, 'max_color':WHITE, 'check':check, 'begin_d':4}).start()
-        # Thread(target= lambda check=check: Calculations.minimax(depth=4, alpha=-math.inf, beta=math.inf, max_player=True if white_to_move else False, max_color=WHITE, check=check, begin_d=4)).start()
-    
-    def start_bot():
-        
-        with mp.Manager() as manager:
-            shared_dict = manager.dict()
-
+        if (bot_color == BLACK and white_to_move) or (bot_color == WHITE and not white_to_move):return
+        if not bot_on: return
+        Thread(target=Calculations.minimax, kwargs={'depth': 4, 'alpha':-math.inf, 'beta':math.inf, 'max_player':white_to_move, 'max_color':WHITE, 'check':check, 'begin_d':4}).start()
 
     def test_bot_callback(result:tuple[int,float]):
         fi, _, _ = Utils.move_to_fi_ti_flag(result[0])
@@ -400,7 +400,7 @@ class Clock():
             timeformat= '{:02d}:{:02d}'.format(mins,secs)
             self.clockWidget.text = timeformat
             time.sleep(0.02)
-            print(timeformat, end='\r')
+            # print(timeformat, end='\r')
 
     def toggle(self,t=0):
         if not self.started:
@@ -412,7 +412,7 @@ class Clock():
         return
 
 class Backend():
-    def get_all_legal_moves(white:bool, attsquares=False) -> np.ndarray:
+    def get_all_legal_moves(white:bool, attsquares=False, last_move=None, checkk=None) -> np.ndarray:
         '''
         ### This function generates the legal moves in the current position
         #### Each legal move is in the following format:
@@ -447,21 +447,21 @@ class Backend():
             if issubclass(type(pieceClass), (w.Pawn, b.Pawn)):
                 # En passant
                 if len(moves_list) > 0:
-                    lastmove = moves_list[-1]
+                    lastmove = last_move if last_move else moves_list[-1]
                     lastmovestr = f'{lastmove:016b}'
                     lmfrom, lmto = int(lastmovestr[0:6], 2), int(lastmovestr[6:12], 2) # lm is an abbreviation for last move
                     _, lmtofile = Utils.index_to_rowfile(lmto)
-                    lmpieceType = None
+                    lmpieceClass = None
                     for name in list(bitboard_name_to_pieceClass.keys()):
                         board = globals()[name]
                         if Backend.check_index_overlap(board, lmto):
-                            lmpieceType = bitboard_name_to_pieceClass[name]
-                    if Backend.check_index_overlap(black_pawn_bitboard if white else white_pawn_bitboard, index+1) and file < 7 and abs(lmfrom - lmto) == 16 and issubclass(type(lmpieceType), (w.Pawn, b.Pawn)) and lmtofile-file == 1:
+                            lmpieceClass = bitboard_name_to_pieceClass[name]
+                    if lmto == index+1 and file < 7 and abs(lmfrom - lmto) == 16 and isinstance(lmpieceClass, w.Pawn if not white else b.Pawn) and lmtofile-file == 1:
                         ofile, orow = pieceClass.movement[2][0]
                         legal_moves[counter] = Backend.move_to_int(row, file, row+orow, file+ofile, legal_moves_flags['e'], attsquares)
                         en_passant_target_index = 8*(row+orow)+(file+ofile)
                         counter += 1
-                    if Backend.check_index_overlap(black_pawn_bitboard if white else white_pawn_bitboard, index-1) and file > 0 and abs(lmfrom - lmto) == 16 and issubclass(type(lmpieceType), (w.Pawn, b.Pawn)) and lmtofile-file == -1:
+                    if lmto == index-1 and file > 0 and abs(lmfrom - lmto) == 16 and isinstance(lmpieceClass, w.Pawn if not white else b.Pawn) and lmtofile-file == -1:
                         ofile, orow = pieceClass.movement[3][0]
                         legal_moves[counter] = Backend.move_to_int(row, file, row+orow, file+ofile, legal_moves_flags['e'], attsquares)
                         en_passant_target_index = 8*(row+orow)+(file+ofile)
@@ -569,10 +569,9 @@ class Backend():
         possible_moves = np.zeros(shape=218, dtype=np.int32)
         p_counter = 0
         for move in legal_moves:
-            movestr = f'{move:016b}'
-            s_index, t_index, flag = int(movestr[0:6], 2), int(movestr[6:12], 2), list(legal_moves_flags.keys())[list(legal_moves_flags.values()).index(int(movestr[12:], 2))]
+            s_index, t_index, flag = Utils.move_to_fi_ti_flag(move)
             if Backend.check_index_overlap(white_king_bitboard if white else black_king_bitboard, s_index):
-                if flag in ['c', 'e']:
+                if flag == 'c':
                     sname, tname = Backend.make_unmake_move(s_index, t_index, flag, white)
                     lm = Backend.get_all_legal_moves(not white, attsquares=True)
                     if np.where(lm == t_index)[0].size == 0:
@@ -589,7 +588,7 @@ class Backend():
             
             # If the king is in check and it needs to move, the previous if-statement will also
             # result in True, so we only have to check if other pieces can block
-            if check:
+            if check or checkk:
                 if Backend.check_index_overlap(king_attack_bitboard, t_index):
                     possible_moves[p_counter] = move
                     p_counter += 1
@@ -606,16 +605,6 @@ class Backend():
                 p_counter += 1
                 continue
         legal_moves = np.resize(possible_moves, p_counter)
-        
-        # NOTE: Redundant
-        testee = []
-        for m in legal_moves:
-            m = m.item()
-            movestr = f'{m:016b}'
-            index_from = int(movestr[0:6], 2)
-            index_to = int(movestr[6:12], 2)
-            flag = list(legal_moves_flags.keys())[list(legal_moves_flags.values()).index(int(movestr[12:], 2))]
-            testee.append(f'{index_from}{index_to}{flag}')
         return legal_moves
 
     def legal_moves_per_square(moves:np.ndarray) -> None:
@@ -660,7 +649,7 @@ class Backend():
                 if Backend.check_index_overlap(board, s_index):
                     s_pieceBitboard = board
                     snamee = name
-                elif Backend.check_index_overlap(board, t_index):
+                elif Backend.check_index_overlap(board, (t_index+8*(-1 if white else 1) if flag=='e' else t_index)):
                     t_pieceBitboard = board
                     tnamee = name
         else:
