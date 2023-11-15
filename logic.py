@@ -113,7 +113,7 @@ promotionStatus = 0
 promotionType = ''
 promotionEvent = Event()
 
-bot_on = True
+bot_on = False
 bot_color = WHITE
 
 class Tests():
