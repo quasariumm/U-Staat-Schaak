@@ -19,21 +19,14 @@ from pieces import White as w
 from pieces import Black as b
 
 import logic
+import global_vars as gl
 
 Config.set('input', 'mouse', 'mouse,disable_multitouch')
 
-themes:dict = {}
-user_color_theme:dict = {}
-user_piece_set:str = ''
 board = [None] * 64
 time_control = 600
 
 app = None
-theme_elements = {
-    'MainScreen':None,
-    'ChessBoard':None,
-    'MovesList':None
-}
 #                                                        .::.
 #                                             _()_       _::_
 #                                   _O      _/____\_   _/____\_
@@ -61,21 +54,18 @@ piecesLayout = [
 class MainScreen(MDScreen):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        global theme_elements
-        theme_elements['MainScreen'] = self
+        gl.theme_elements['MainScreen'] = self
 
 class ChessBoard(MDGridLayout):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        global theme_elements, user_color_theme
-        print(user_color_theme)
-        theme_elements['ChessBoard'] = self
+        gl.theme_elements['ChessBoard'] = self
         self.rows = 8
         self.cols = 8
         self.orientation = 'lr-bt'
         for i in range(1,65):
             row = math.floor((i-1)/8) + 1
-            color = get_color_from_hex(user_color_theme['board_prim']) if (i%2==0 if row%2==0 else i%2==1) else get_color_from_hex(user_color_theme['board_sec'])
+            color = get_color_from_hex(gl.user_color_theme['board_prim']) if (i%2==0 if row%2==0 else i%2==1) else get_color_from_hex(gl.user_color_theme['board_sec'])
             cbs = ChessBoardSquare(text=str(i),background_color = color, color = [1,1,1,0])
             self.add_widget(cbs)
         
@@ -119,15 +109,14 @@ class ChessPromotionUI(GridLayout):
 class MovesList(MDList):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        global theme_elements
         logic.move_list = self
-        theme_elements['MovesList'] = self
 
 class TopClock(MDFillRoundFlatIconButton):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         global app
         logic.topClock = self
+        gl.theme_elements['TopClock'] = self
         ChessApp.init_clocks(app)
 
 class BottomClock(MDFillRoundFlatIconButton):
@@ -135,6 +124,7 @@ class BottomClock(MDFillRoundFlatIconButton):
         super().__init__(*args, **kwargs)
         global app
         logic.bottomClock = self
+        gl.theme_elements['BottomClock'] = self
         ChessApp.init_clocks(app)
 
 class ChessApp(MDApp):
@@ -164,30 +154,40 @@ class ChessApp(MDApp):
         logic.Backend.update_bitboards(True)
         lm = logic.Backend.get_all_legal_moves(True)
         logic.Backend.legal_moves_per_square(lm)
+        update_theming()
         return super().on_start()
 
     def build(self):
+        with open(os.path.dirname(__file__) + '\\themes.json', 'r') as f:
+            ctx = json.load(f)
+            f.close()
+        gl.themes = deepcopy(ctx)
+        gl.user_color_theme = deepcopy(gl.themes['color_themes'][gl.themes['user_save']['color_theme']])
+        gl.user_piece_set = deepcopy(gl.themes['user_save']['piece_set'])
         self.theme_cls.theme_style = 'Dark'
         Window.bind(on_request_close=self.exit_promotion)
         return Builder.load_file(os.path.dirname(__file__) + '\\app.kv')
 
 def update_theming():
-    global theme_elements, user_color_theme, user_piece_set
+    print(gl.theme_elements)
     # Main screen background
-    theme_elements['MainScreen'].backgr_color = user_color_theme['background_color']
+    gl.theme_elements['MainScreen'].backgr_color = get_color_from_hex(gl.user_color_theme['background_color'])
     # Chess board
-    for i,el in enumerate(theme_elements['ChessBoard'].children):
-        row = math.floor((i-1)/8) + 1
-        color = get_color_from_hex(user_color_theme['board_prim']) if (i%2==0 if row%2==0 else i%2==1) else get_color_from_hex(user_color_theme['board_sec'])
+    for i,el in enumerate(gl.theme_elements['ChessBoard'].children):
+        row = math.floor(i/8) + 1
+        color = get_color_from_hex(gl.user_color_theme['board_prim']) if ((i+1)%2==0 if row%2==0 else (i+1)%2==1) else get_color_from_hex(gl.user_color_theme['board_sec'])
         el.background_color = color
+    # Clocks
+    gl.theme_elements['TopClock'].background_color = get_color_from_hex(gl.user_color_theme['clock_color_black'])
+    gl.theme_elements['TopClock'].disabled_color = get_color_from_hex(gl.user_color_theme['clock_color_black'])
+    gl.theme_elements['BottomClock'].background_color = get_color_from_hex(gl.user_color_theme['clock_color_white'])
+    gl.theme_elements['BottomClock'].disabled_color = get_color_from_hex(gl.user_color_theme['clock_color_white'])
+    # Moves list
+    gl.theme_elements['MainScreen'].move_list_backgr_color = get_color_from_hex(gl.user_color_theme['move_list_color'])
+
+def update_theme_user_save(theme_name:str = None, piece_set:str = None) -> None:
+    pass
 
 if __name__ == "__main__":
-    with open(os.path.dirname(__file__) + '\\themes.json', 'r') as f:
-        ctx = json.load(f)
-        f.close()
-    themes = deepcopy(ctx)
-    user_color_theme = deepcopy(themes['color_themes'][themes['user_save']['color_theme']])
-    user_piece_set = deepcopy(themes['user_save']['piece_set'])
     app = ChessApp()
     app.run()
-    update_theming()

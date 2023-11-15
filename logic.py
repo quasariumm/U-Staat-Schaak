@@ -11,10 +11,12 @@ from kivymd.uix.list import OneLineListItem
 from kivy.uix.popup import Popup
 from kivy.clock import mainthread
 
-from app import user_color_theme, board, piecesLayout, ChessPromotionUI
+from app import board, piecesLayout, ChessPromotionUI
 from pieces import White as w
 from pieces import Black as b
 from bot import Calculations, Misc, WHITE, BLACK
+
+import global_vars as gl
 
 movenum=0
 move_list = []
@@ -113,7 +115,7 @@ promotionStatus = 0
 promotionType = ''
 promotionEvent = Event()
 
-bot_on = True
+bot_on = False
 bot_color = WHITE
 
 class Tests():
@@ -137,7 +139,7 @@ class Frontend():
             selected = button
             tempBackground_color = selected.background_color
             r,g,bl,a = selected.background_color
-            selected.background_color = [r*0.5, g, bl, a] if selected.background_color == get_color_from_hex(user_color_theme['board_prim']) else [r*0.75, g, bl, a]
+            selected.background_color = [r*0.5, g, bl, a] if selected.background_color == get_color_from_hex(gl.user_color_theme['board_prim']) else [r*0.75, g, bl, a]
             if (issubclass(type(piecesLayout[row][file]), (w.Pawn, w.King, w.Knight, w.Bishop, w.Rook, w.Queen)) and white_to_move) or (issubclass(type(piecesLayout[row][file]), (b.Pawn, b.King, b.Knight, b.Bishop, b.Rook, b.Queen)) and not white_to_move):
                 Frontend.show_legal_move_indicators(button)
         elif piecesLayout[row][file] == None and selected == None:
@@ -152,7 +154,7 @@ class Frontend():
             selected = button
             tempBackground_color = selected.background_color
             r,g,bl,a = selected.background_color
-            selected.background_color = [r*0.5, g, bl, a] if selected.background_color == get_color_from_hex(user_color_theme['board_prim']) else [r*0.75, g, bl, a]
+            selected.background_color = [r*0.5, g, bl, a] if selected.background_color == get_color_from_hex(gl.user_color_theme['board_prim']) else [r*0.75, g, bl, a]
             if (issubclass(type(piecesLayout[row][file]), (w.Pawn, w.King, w.Knight, w.Bishop, w.Rook, w.Queen)) and white_to_move) or (issubclass(type(piecesLayout[row][file]), (b.Pawn, b.King, b.Knight, b.Bishop, b.Rook, b.Queen)) and not white_to_move):
                 Frontend.show_legal_move_indicators(button)
         

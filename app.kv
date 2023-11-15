@@ -2,54 +2,60 @@
 #:import hex kivy.utils.get_color_from_hex
 
 <MainScreen>:
-    backgr_color: backgr_color
+    backgr_color: 0,0,0,1
+    move_list_backgr_color: .25,.27,.27,1
+    canvas:
+        Color:
+            rgba: root.backgr_color
+        Rectangle:
+            size: self.size
+            pos: self.pos
     MDBoxLayout:
-        canvas:
-            Color:
-                id: backgr_color
-            Rectangle:
-                size: self.size
-                pos: self.pos
-        board: board
-        padding: [5,0,5,0]
+        orientation: "vertical"
+        MDTopAppBar:
+            title: "Chess app"
         MDBoxLayout:
-            orientation: "vertical"
-            size_hint_y: None
-            height: board.width
-            pos_hint: {"center_y":0.5}
-            size_hint_x: 0.25
-            canvas.before:
-                Color:
-                    rgba: 0.25, 0.27, 0.27, 1
-                RoundedRectangle:
-                    pos: self.pos
-                    size: self.size
-                    radius: [20,]
-            MDLabel:
-                text:"Moves"
-                valign: "top"
-                halign: "left"
-                padding: [10,10,10,10]
-                size_hint_y: 0.075
-                text_size: (self.width - 20, self.height)
-            MDScrollView:
-                size_hint_y: 0.8
-                padding: [20,0,20,30]
-                MovesList:
-        ChessBoard:
-            id:board
-            padding:[30,0,10,0]
-        MDRelativeLayout:
-            size_hint_y: 1
-            size_hint_x: 0.25
-            TopClock:
-                size_hint_y: .075
-                size_hint_x: .35
-                pos_hint: {"top": 1-((self.parent.parent.height-board.height)/2)/self.parent.parent.height}
-            BottomClock:
-                size_hint_y: .075
-                size_hint_x: .35
-                pos_hint: {"top": ((self.parent.parent.height-board.height)/2+self.height)/self.parent.parent.height}
+            size_hint_y: 0.9
+            board: board
+            padding: [5,0,5,0]
+            MDBoxLayout:
+                orientation: "vertical"
+                size_hint_y: None
+                height: board.width
+                pos_hint: {"center_y":0.5}
+                size_hint_x: 0.25
+                canvas.before:
+                    Color:
+                        rgba: root.move_list_backgr_color
+                    RoundedRectangle:
+                        pos: self.pos
+                        size: self.size
+                        radius: [20,]
+                MDLabel:
+                    text:"Moves"
+                    valign: "top"
+                    halign: "left"
+                    padding: [10,10,10,10]
+                    size_hint_y: 0.075
+                    text_size: (self.width - 20, self.height)
+                MDScrollView:
+                    size_hint_y: 0.8
+                    padding: [20,0,20,30]
+                    MovesList:
+            ChessBoard:
+                id:board
+                padding:[30,0,10,0]
+            MDRelativeLayout:
+                size_hint_y: 1
+                size_hint_x: 0.25
+                TopClock:
+                    size_hint_y: .075
+                    size_hint_x: .35
+                    pos_hint: {"top": 1-((self.parent.parent.height-board.height)/2)/self.parent.parent.height}
+                BottomClock:
+                    size_hint_y: .075
+                    size_hint_x: .35
+                    pos_hint: {"top": ((self.parent.parent.height-board.height)/2+self.height)/self.parent.parent.height}
 
 <TopClock>:
     text: '10:29'
