@@ -143,10 +143,6 @@ class Calculations():
             _, fi, _ = logic.Utils.move_to_fi_ti_flag(lastmove)
             pieceClass = logic.Utils.get_piece_type(fi)()
             new_format = logic.Frontend.move_other_format(lastmove, pieceClass)
-            # NOTE: uncomment for debugging
-            # print(logic.attacking_bitboard)
-            # print(f'King index: {int(math.log2(logic.white_king_bitboard if max_player else logic.black_king_bitboard))}')
-            # print(f'Current depth: {depth}\nLast move: {new_format}\nColor to move: {"white" if max_player else "black"}')
         moves = Calculations.moveOrdering(moves)
         if lastmove:
             mate, draw = logic.Backend.mate_and_draw(lastmove)
@@ -160,7 +156,6 @@ class Calculations():
             for move in moves:
                 fi, ti, flag = logic.Utils.move_to_fi_ti_flag(move)
                 linestrr = linestr + f'-{fi:02},{ti:02},{flag},{"+" if check else "_"}'
-                # FIXME: En passant make_unmake_move
                 try:
                     sname, tname = logic.Backend.make_unmake_move(fi, ti, flag, True)
                 except:
@@ -185,15 +180,10 @@ class Calculations():
                 if current_eval > max_eval:
                     max_eval = current_eval
                     best_move = move
-                # NOTE: TEST
-                if depth == begin_d:
-                    logic.Frontend.test_bot_callback((move, max_eval))
 
                 alpha = max(alpha, current_eval)
                 if beta <= alpha:
                     break
-            # Test callback
-            #logic.Frontend.test_bot_callback((best_move, max_eval))
         else:
             max_eval = math.inf
             for move in moves:
@@ -223,15 +213,11 @@ class Calculations():
                 if current_eval < max_eval:
                     max_eval = current_eval
                     best_move = move
-                # NOTE: TEST
-                if depth == begin_d:
-                    logic.Frontend.test_bot_callback((move, current_eval))
 
                 beta = min(beta, current_eval)
                 if beta <= alpha:
                     break
-            # Test callback
-            #logic.Frontend.test_bot_callback((best_move, max_eval))
+
         if depth == begin_d:
             fi, _, _ = logic.Utils.move_to_fi_ti_flag(best_move)
             piece_type = logic.Utils.get_piece_type(fi)()

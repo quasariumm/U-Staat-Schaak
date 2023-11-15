@@ -12,6 +12,8 @@ from kivy.utils import get_color_from_hex
 from kivy.core.window import Window
 import os, math, time
 from threading import Thread
+import json
+from copy import deepcopy
 
 from pieces import White as w
 from pieces import Black as b
@@ -20,12 +22,18 @@ import logic
 
 Config.set('input', 'mouse', 'mouse,disable_multitouch')
 
-board_prim = "#795C34"
-board_sec = "#E4D9CA"
+themes:dict = {}
+user_color_theme:dict = {}
+user_piece_set:str = ''
 board = [None] * 64
 time_control = 600
 
 app = None
+theme_elements = {
+    'MainScreen':None,
+    'ChessBoard':None,
+    'MovesList':None
+}
 #                                                        .::.
 #                                             _()_       _::_
 #                                   _O      _/____\_   _/____\_
@@ -51,17 +59,23 @@ piecesLayout = [
 ]
 
 class MainScreen(MDScreen):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        global theme_elements
+        theme_elements['MainScreen'] = self
 
 class ChessBoard(MDGridLayout):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        global theme_elements, user_color_theme
+        print(user_color_theme)
+        theme_elements['ChessBoard'] = self
         self.rows = 8
         self.cols = 8
         self.orientation = 'lr-bt'
         for i in range(1,65):
             row = math.floor((i-1)/8) + 1
-            color = get_color_from_hex(board_prim) if (i%2==0 if row%2==0 else i%2==1) else get_color_from_hex(board_sec)
+            color = get_color_from_hex(user_color_theme['board_prim']) if (i%2==0 if row%2==0 else i%2==1) else get_color_from_hex(user_color_theme['board_sec'])
             cbs = ChessBoardSquare(text=str(i),background_color = color, color = [1,1,1,0])
             self.add_widget(cbs)
         
@@ -105,7 +119,9 @@ class ChessPromotionUI(GridLayout):
 class MovesList(MDList):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        global theme_elements
         logic.move_list = self
+        theme_elements['MovesList'] = self
 
 class TopClock(MDFillRoundFlatIconButton):
     def __init__(self, *args, **kwargs):
@@ -153,8 +169,25 @@ class ChessApp(MDApp):
     def build(self):
         self.theme_cls.theme_style = 'Dark'
         Window.bind(on_request_close=self.exit_promotion)
-        return Builder.load_file(os.path.dirname(__file__) + '\\app.kv')        
+        return Builder.load_file(os.path.dirname(__file__) + '\\app.kv')
+
+def update_theming():
+    global theme_elements, user_color_theme, user_piece_set
+    # Main screen background
+    theme_elements['MainScreen'].backgr_color = user_color_theme['background_color']
+    # Chess board
+    for i,el in enumerate(theme_elements['ChessBoard'].children):
+        row = math.floor((i-1)/8) + 1
+        color = get_color_from_hex(user_color_theme['board_prim']) if (i%2==0 if row%2==0 else i%2==1) else get_color_from_hex(user_color_theme['board_sec'])
+        el.background_color = color
 
 if __name__ == "__main__":
+    with open(os.path.dirname(__file__) + '\\themes.json', 'r') as f:
+        ctx = json.load(f)
+        f.close()
+    themes = deepcopy(ctx)
+    user_color_theme = deepcopy(themes['color_themes'][themes['user_save']['color_theme']])
+    user_piece_set = deepcopy(themes['user_save']['piece_set'])
     app = ChessApp()
     app.run()
+    update_theming()

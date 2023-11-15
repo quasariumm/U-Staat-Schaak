@@ -1,11 +1,15 @@
 #:kivy 1.1.1
 #:import hex kivy.utils.get_color_from_hex
-#:import Svg kivy.graphics.svg.Svg
 
-#:set board_prim "#795C34"
-#:set board_sec "#E4D9CA"
 <MainScreen>:
+    backgr_color: backgr_color
     MDBoxLayout:
+        canvas:
+            Color:
+                id: backgr_color
+            Rectangle:
+                size: self.size
+                pos: self.pos
         board: board
         padding: [5,0,5,0]
         MDBoxLayout:
@@ -68,6 +72,7 @@
 <ChessBoardSquare>:
     background_normal: ""
     background_down: ""
+    background_color: (0,0,0,0)
     border: [0,0,0,0]
     image:image
     on_press: self.pressAction()
