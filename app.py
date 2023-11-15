@@ -145,7 +145,9 @@ class ChessApp(MDApp):
                 logic.b_clock.toggle()
 
     def on_start(self):
-        logic.Tests.legal_move_time_comparison()
+        logic.Backend.update_bitboards(True)
+        lm = logic.Backend.get_all_legal_moves(True)
+        logic.Backend.legal_moves_per_square(lm)
         return super().on_start()
 
     def build(self):
