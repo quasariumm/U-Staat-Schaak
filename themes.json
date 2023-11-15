@@ -1,0 +1,31 @@
+{
+    "color_themes":{
+        "Default Dark":{
+            "background_color":"#",
+            "board_prim":"#795C34",
+            "board_sec":"#E4D9CA",
+            "clock_color_white":"",
+            "clock_color_black":"",
+            "move_list_color":"",
+            "top_bar_color":"",
+            "app_icon":"\\data\\ico\\default.ico"
+        },
+        "Test Theme":{
+            "background_color":"#020606",
+            "board_prim":"#00ffff",
+            "board_sec":"#ffff00",
+            "clock_color_white":"",
+            "clock_color_black":"",
+            "move_list_color":"",
+            "top_bar_color":"",
+            "app_icon":"\\data\\ico\\default.ico"
+        }
+    },
+    "piece_sets":[
+        "Default"
+    ],
+    "user_save":{
+        "color_theme":"Test Theme",
+        "piece_set":"Default"
+    }
+}
