@@ -261,6 +261,8 @@ class Frontend():
         global bot_color, bot_on, white_to_move
         Backend.update_pieces_layout()
         Backend.update_bitboards(white_to_move)
+        t_clock.toggle()
+        b_clock.toggle()
         check = Backend.check_index_overlap(attacking_bitboard, white_king_index if white_to_move else black_king_index)
         print('check' if check else 'not check')
         Frontend.clear_legal_moves_indicators()
@@ -298,7 +300,6 @@ class Frontend():
         global white_king_moved, white_krook_moved, white_qrook_moved, black_king_moved, black_krook_moved, black_qrook_moved
         global legal_moves_per_square, legal_moves_flags
         global promotionStatus, promotionEvent
-        global t_clock, b_clock
         promotionEvent.wait()
         if promotionStatus == 2:
             popup.dismiss()
