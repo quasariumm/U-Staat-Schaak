@@ -259,10 +259,11 @@ class Frontend():
         global movenum, check, mate
         global attacking_bitboard, white_king_index, black_king_index
         global bot_color, bot_on, white_to_move
+        global t_clock, b_clock
         Backend.update_pieces_layout()
         Backend.update_bitboards(white_to_move)
-        t_clock.toggle()
-        b_clock.toggle()
+        b_clock.toggle(t=time_control)
+        t_clock.toggle(t=time_control)
         check = Backend.check_index_overlap(attacking_bitboard, white_king_index if white_to_move else black_king_index)
         print('check' if check else 'not check')
         Frontend.clear_legal_moves_indicators()
