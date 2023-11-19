@@ -11,7 +11,7 @@ from kivymd.uix.list import OneLineListItem
 from kivy.uix.popup import Popup
 from kivy.clock import mainthread
 
-from app import board_prim, board, piecesLayout, ChessPromotionUI
+from app import board_prim, board, piecesLayout, ChessPromotionUI, time_control
 from pieces import White as w
 from pieces import Black as b
 from bot import Calculations, Misc, WHITE, BLACK
@@ -164,6 +164,7 @@ class Frontend():
         global movenum
         global white_king_moved, white_krook_moved, white_qrook_moved, black_king_moved, black_krook_moved, black_qrook_moved
         global legal_moves_per_square, legal_moves_flags
+        global t_clock,b_clock
         row, file = Utils.button_to_rowfile(check_piece)
         destrow, destfile = Utils.button_to_rowfile(dest)
         pieceClass = Utils.get_piece_type(8*row+file)()
@@ -297,6 +298,7 @@ class Frontend():
         global white_king_moved, white_krook_moved, white_qrook_moved, black_king_moved, black_krook_moved, black_qrook_moved
         global legal_moves_per_square, legal_moves_flags
         global promotionStatus, promotionEvent
+        global t_clock, b_clock
         promotionEvent.wait()
         if promotionStatus == 2:
             popup.dismiss()
@@ -400,7 +402,6 @@ class Clock():
             timeformat= '{:02d}:{:02d}'.format(mins,secs)
             self.clockWidget.text = timeformat
             time.sleep(0.02)
-            # print(timeformat, end='\r')
 
     def toggle(self,t=0):
         if not self.started:
