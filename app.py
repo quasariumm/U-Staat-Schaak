@@ -143,6 +143,9 @@ class ChessApp(MDApp):
         logic.t_clock.toggle(t=time_control)
         logic.b_clock.toggle(t=time_control)
     
+    def top_bar_callback(self, button):
+        print(button)
+    
     def on_stop(self):
         if logic.t_clock and logic.b_clock:
             if logic.t_clock.started:
@@ -169,7 +172,6 @@ class ChessApp(MDApp):
         return Builder.load_file(os.path.dirname(__file__) + '\\app.kv')
 
 def update_theming():
-    print(gl.theme_elements)
     # Main screen background
     gl.theme_elements['MainScreen'].backgr_color = get_color_from_hex(gl.user_color_theme['background_color'])
     # Chess board

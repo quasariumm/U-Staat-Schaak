@@ -1,9 +1,11 @@
 #:kivy 1.1.1
 #:import hex kivy.utils.get_color_from_hex
+#:import dp kivy.metrics.dp
 
 <MainScreen>:
     backgr_color: 0,0,0,1
     move_list_backgr_color: .25,.27,.27,1
+    bl: bl
     canvas:
         Color:
             rgba: root.backgr_color
@@ -11,11 +13,18 @@
             size: self.size
             pos: self.pos
     MDBoxLayout:
+        id: bl
+        topbar: topbar
         orientation: "vertical"
         MDTopAppBar:
+            id: topbar
+            height: 35
             title: "Chess app"
+            use_overflow: True
+            right_action_items: [["home", lambda x: app.top_bar_callback('home/end_game'), "home"],["wrench", lambda x: app.top_bar_callback('settings'), "Settings"]]
+            
         MDBoxLayout:
-            size_hint_y: 0.9
+            height: self.parent.height-35
             board: board
             padding: [5,0,5,0]
             MDBoxLayout:
@@ -45,17 +54,24 @@
             ChessBoard:
                 id:board
                 padding:[30,0,10,0]
+                width: 0.6*root.width if 0.6*root.width<=0.95*self.parent.height else 0.95*self.parent.height
             MDRelativeLayout:
                 size_hint_y: 1
                 size_hint_x: 0.25
                 TopClock:
                     size_hint_y: .075
                     size_hint_x: .35
+                    size_hint_max_x: root.width - self.x - 5
                     pos_hint: {"top": 1-((self.parent.parent.height-board.height)/2)/self.parent.parent.height}
+                    text_size: (self.width - dp(32), None)
+                    font_size: self.width / 6
                 BottomClock:
                     size_hint_y: .075
                     size_hint_x: .35
+                    size_hint_max_x: root.width - self.x - 5
                     pos_hint: {"top": ((self.parent.parent.height-board.height)/2+self.height)/self.parent.parent.height}
+                    text_size: (self.width - dp(32), None)
+                    font_size: self.width / 6
 
 <TopClock>:
     text: '10:29'
@@ -123,7 +139,7 @@
 
 <ChessBoard>:
     height: self.width
-    size_hint: 0.5, None
+    size_hint: None, None
     pos_hint: {"center_y":0.5}
 
 <MovesList>:

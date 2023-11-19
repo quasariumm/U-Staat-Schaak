@@ -9,9 +9,10 @@ from kivy.utils import get_color_from_hex
 from kivy.uix.button import Button
 from kivymd.uix.list import OneLineListItem
 from kivy.uix.popup import Popup
+from kivymd.uix.label import MDLabel
 from kivy.clock import mainthread
 
-from app import board, piecesLayout, ChessPromotionUI
+from app import board, piecesLayout, ChessPromotionUI, app
 from pieces import White as w
 from pieces import Black as b
 from bot import Calculations, Misc, WHITE, BLACK
@@ -21,6 +22,9 @@ import global_vars as gl
 movenum=0
 move_list = []
 list_items=[]
+
+moves_fen = []
+moves_posfen = []
 
 selected : Button = None
 tempBackground_color = []
@@ -116,6 +120,7 @@ promotionType = ''
 promotionEvent = Event()
 
 bot_on = False
+# NOTE: if bot_color is 2 it's a bot vs bot game
 bot_color = WHITE
 
 class Tests():
@@ -260,21 +265,37 @@ class Frontend():
         global movenum, check, mate
         global attacking_bitboard, white_king_index, black_king_index
         global bot_color, bot_on, white_to_move
+        global moves_list
+        global moves_fen, moves_posfen
         Backend.update_pieces_layout()
         Backend.update_bitboards(white_to_move)
         check = Backend.check_index_overlap(attacking_bitboard, white_king_index if white_to_move else black_king_index)
         print('check' if check else 'not check')
         Frontend.clear_legal_moves_indicators()
         movenum+=1
+        moves_list.append(move)
         lm = Backend.get_all_legal_moves(white_to_move)
         Backend.legal_moves_per_square(lm)
         # NOTE: The draw local variable gives the type of draw (Stalemate, 50-move rule, threefold repitition)
         mate, draw = Backend.mate_and_draw(move)
+        if mate:
+            Frontend.invoke_popup(f"{'Black' if white_to_move else 'White'} won by checkmate")
+            Frontend.switch_flag_home_icon()
+            with open(os.path.dirname(__file__) + "\\data\\log\\latest.log", 'w') as f:
+                f.writelines(moves_fen)
+                f.close()
+        if draw != '':
+            Frontend.invoke_popup(f"Draw by {draw}")
+            Frontend.switch_flag_home_icon()
+            with open(os.path.dirname(__file__) + "\\data\\log\\latest.log", 'w') as f:
+                f.writelines(moves_fen)
+                f.close()
         print(f'mate: {mate}, draw: {draw}')
-        print(Utils.position_to_fen()[0])
+        fen = Utils.position_to_fen()[0]
+        moves_fen.append(fen)
+        moves_posfen.append(fen.split(' ', maxsplit=1)[0])
         Frontend.update_move_list(move, pieceClass)
-        # NOTE: Test
-        # mp.Process(target=Calculations.minimax, kwargs={'depth': 4, 'alpha':-math.inf, 'beta':math.inf, 'max_player':white_to_move, 'max_color':WHITE, 'check':check, 'begin_d':4}).start()
+
         if (bot_color == BLACK and white_to_move) or (bot_color == WHITE and not white_to_move):return
         if not bot_on: return
         Thread(target=Calculations.minimax, kwargs={'depth': 4, 'alpha':-math.inf, 'beta':math.inf, 'max_player':white_to_move, 'max_color':WHITE, 'check':check, 'begin_d':4}).start()
@@ -378,8 +399,7 @@ class Frontend():
         return newformat
 
     def update_move_list(move:int, pieceClass) -> None:
-        global movenum, list_items, moves_list
-        moves_list.append(move)
+        global movenum, list_items
         newformat = Frontend.move_other_format(move, pieceClass)
         if movenum%2==1:
             li=OneLineListItem(text=f"{math.ceil(movenum/2)}. {newformat}")
@@ -387,6 +407,14 @@ class Frontend():
             list_items.append(li)
         else:
             list_items[int(movenum/2-1)].text+=f' {newformat}'
+    
+    def invoke_popup(message:str) -> None:
+        popup = Popup(title='Game over', content = MDLabel(text=message), size_hint=(0.25, 0.15))
+        popup.open()
+    
+    def switch_flag_home_icon() -> None:
+        el = gl.theme_elements['MainScreen'].bl.topbar.right_action_items[0]
+        el = ["home", lambda x: app.top_bar_callback(x), "Home"] if el[0] == "flag" else ["flag", lambda x: app.top_bar_callback(x), "End game"]
 
 class Clock(): 
     def __init__(self, clock) -> None:
@@ -625,10 +653,11 @@ class Backend():
     
     def mate_and_draw(move:int) -> tuple[bool, str]:
         global check, legal_moves_per_square, repitition, fiftymoverule
+        global moves_posfen
         if check and not legal_moves_per_square:
             return True, ''
         elif not legal_moves_per_square:
-            return False, 'Stalemate'
+            return False, 'stalemate'
         _, ti, flag = Utils.move_to_fi_ti_flag(move)
         if flag in ['c', 'e', 'qq', 'qr', 'qb', 'qn'] or issubclass(Utils.get_piece_type(ti), (w.Pawn, b.Pawn)):
             fiftymoverule = 0
@@ -636,7 +665,13 @@ class Backend():
             fiftymoverule += 1
         if fiftymoverule >= 50:
             return False, '50-move rule'
-        # TODO: repitition
+        if moves_posfen:
+            if moves_posfen.count(max(set(moves_posfen), key=moves_posfen.count)) == 3:
+                return False, 'threefold repitition'
+        typeList = Misc.piecesTypesList()
+        if (typeList.count(w.Pawn) == 0 and typeList.count(w.Queen) == 0 and typeList.count(w.Rook) == 0 and typeList.count(w.Knight) + typeList.count(w.Bishop) <= 1)\
+        or (typeList.count(b.Pawn) == 0 and typeList.count(b.Queen) == 0 and typeList.count(b.Rook) == 0 and typeList.count(b.Knight) + typeList.count(b.Bishop) <= 1):
+            return False, 'insufficient material'
         return False, ''
     
     def make_unmake_move(s_index:int, t_index:int, flag:str, white:bool, sname=None, tname=None) -> tuple[str, str] | None:
