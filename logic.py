@@ -409,7 +409,7 @@ class Frontend():
             list_items[int(movenum/2-1)].text+=f' {newformat}'
     
     def invoke_popup(message:str) -> None:
-        popup = Popup(title='Game over', content = MDLabel(text=message), size_hint=(0.25, 0.15))
+        popup = Popup(title='Game over', content = MDLabel(text=message), size_hint=(0.25, 0.15), padding=[25,0,25,0])
         popup.open()
     
     def switch_flag_home_icon() -> None:

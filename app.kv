@@ -26,8 +26,11 @@
         MDBoxLayout:
             height: self.parent.height-35
             board: board
+            move_list: move_list
             padding: [5,0,5,0]
             MDBoxLayout:
+                id: move_list
+                la: la
                 orientation: "vertical"
                 size_hint_y: None
                 height: board.width
@@ -41,6 +44,7 @@
                         size: self.size
                         radius: [20,]
                 MDLabel:
+                    id: la
                     text:"Moves"
                     valign: "top"
                     halign: "left"
@@ -143,5 +147,33 @@
     pos_hint: {"center_y":0.5}
 
 <MovesList>:
+
+<SettingsMenu>:
+    di_color: ct.di_color
+    di_pieces: ps.di_pieces
+    ct: ct
+    ps: ps
+    orientation: "vertical"
+
+    MDBoxLayout:
+        id: ct
+        di_color: di_color
+        MDLabel:
+            text: "Color theme: "
+        MDDropDownItem:
+            id: di_color
+            pos_hint: {'center_x': .5, 'center_y': .5}
+            text: 'eeeeeee'
+            on_release: self.parent.parent.menu_color.open()
+    MDBoxLayout:
+        id: ps
+        di_pieces: di_pieces
+        MDLabel:
+            text: "Piece set: "
+        MDDropDownItem:
+            id: di_pieces
+            pos_hint: {'center_x': .5, 'center_y': .5}
+            text: 'eeeeeee'
+            on_release: self.parent.parent.menu_pieces.open()
 
 MainScreen:
