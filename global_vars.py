@@ -7,6 +7,8 @@ theme_elements = {
     'MainScreen':None,
     'ChessBoard':None,
     'TopClock':None,
-    'BottomClock':None
+    'BottomClock':None,
+    'MovesList':None
 }
 settings_menu:MDBoxLayout = None
+move_list_scrollview = None

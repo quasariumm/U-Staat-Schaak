@@ -219,7 +219,15 @@ class Calculations():
                     break
 
         if depth == begin_d:
-            fi, _, _ = logic.Utils.move_to_fi_ti_flag(best_move)
+            # Make the move
+            fi, ti, flag = logic.Utils.move_to_fi_ti_flag(best_move)
+            if flag[0] not in ['p', 'q']:
+                logic.Frontend.move(logic.board[fi], logic.board[ti])
+            else:
+                logic.promotionStatus = 1
+                logic.promotionType = flag[-1]
+                logic.Frontend.promotionMove(logic.board[fi], logic.board[ti], None, bot_move=True)
+            logic.bot_move = False
             piece_type = logic.Utils.get_piece_type(fi)()
             new_format = logic.Frontend.move_other_format(best_move, piece_type)
             print(new_format, max_eval)

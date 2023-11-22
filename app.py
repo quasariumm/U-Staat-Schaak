@@ -11,6 +11,7 @@ from kivymd.uix.menu import MDDropdownMenu
 from kivy.uix.button import Button
 from kivymd.uix.button import MDFillRoundFlatIconButton
 from kivymd.uix.list import MDList
+from kivymd.uix.scrollview import MDScrollView
 from kivy.utils import get_color_from_hex
 from kivy.metrics import dp
 from kivy.core.window import Window
@@ -24,13 +25,14 @@ from pieces import Black as b
 
 import logic
 import global_vars as gl
+from bot import Calculations
 
 Config.set('input', 'mouse', 'mouse,disable_multitouch')
 
 board = [None] * 64
 time_control = 600
 
-app = None
+app:MDApp = None
 #                                                        .::.
 #                                             _()_       _::_
 #                                   _O      _/____\_   _/____\_
@@ -117,6 +119,8 @@ class MovesList(MDList):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         logic.move_list = self
+        gl.theme_elements['MovesList'] = self
+        gl.move_list_scrollview = self.parent
 
 class TopClock(MDFillRoundFlatIconButton):
     def __init__(self, *args, **kwargs):
@@ -142,23 +146,25 @@ class SettingsMenu(MDBoxLayout):
             {
                 "viewclass": "OneLineListItem",
                 "text": f"{ct}",
+                "text_color":[1,1,1,1],
                 "height": dp(56),
                 "on_release": lambda x=f"{ct}": self.set_item(self.menu_color, self.di_color, x),
             } for ct in self.color_themes
         ]
         self.di_color.text = gl.themes['user_save']['color_theme']
-        self.menu_color = MDDropdownMenu(caller=self.di_color, items=menu_items_color, position='bottom', width_mult=4)
+        self.menu_color = MDDropdownMenu(caller=self.di_color, items=menu_items_color, position='bottom', width_mult=4, background_color=get_color_from_hex('#121212'))
         self.piece_sets = gl.themes['piece_sets']
         menu_items_pieces = [
             {
                 "viewclass":"OneLineListItem",
                 "text": f"{ps}",
+                "text_color":[1,1,1,1],
                 "height": dp(56),
                 "on_release": lambda x=f"{ps}": self.set_item(self.menu_pieces, self.di_pieces, x),
             } for ps in self.piece_sets
         ]
         self.di_pieces.text = gl.themes['user_save']['piece_set']
-        self.menu_pieces = MDDropdownMenu(caller=self.di_pieces, items=menu_items_pieces, position='bottom', width_mult=4)
+        self.menu_pieces = MDDropdownMenu(caller=self.di_pieces, items=menu_items_pieces, position='bottom', width_mult=4, background_color=get_color_from_hex('#121212'))
         self.menu_color.bind()
         self.menu_pieces.bind()
     
@@ -178,6 +184,46 @@ class SettingsMenu(MDBoxLayout):
     
     def on_dismiss(*args) -> None:
         gl.settings_menu = None
+    
+class MainMenuOptions(MDBoxLayout):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.size_hint = (0.9, 0.925)
+        self.pos_hint = {'center_x': 0.5, 'center_y': 0.5}
+        self.mode_choice = 'No bot'
+        self.board_switch = False
+        modeList = [
+            {
+                "viewclass": "OneLineListItem",
+                "text": m,
+                "height": dp(56),
+                "on_release": lambda x=m: self.set_item(x)
+            } for m in ['No bot', 'Bot as white', 'Bot as black', 'Bot vs bot']
+        ]
+        self.menu_mode = MDDropdownMenu(caller=self.mode, items = modeList, position='bottom', width_mult=4)
+        self.menu_mode.bind()
+
+    def set_item(self, value:str) -> None:
+        self.mode.set_item(value)
+        self.menu_mode.dismiss()
+    
+    def start_game(self) -> None:
+        logic.bot_on = self.mode_choice != 'No bot'
+        match self.mode_choice:
+            case 'Bot as white':
+                logic.bot_color = 1
+            case 'Bot as black':
+                logic.bot_color = -1
+            case 'Bot vs bot':
+                logic.bot_color = 2
+        logic.board_turns = self.main.turn_layout.turn.active
+        custom_fen = self.main.custom_fen.text
+        if custom_fen != '':
+            logic.Backend.load_fen(custom_fen)
+        logic.started = True
+        logic.Frontend.switch_movelist_mainmenu()
+        if logic.bot_on and logic.bot_color == 1:
+            Thread(target=Calculations.minimax, kwargs={'depth': 4, 'alpha':-math.inf, 'beta':math.inf, 'max_player':logic.white_to_move, 'max_color':1, 'check':logic.check, 'begin_d':4}).start()
 
 class ChessApp(MDApp):
     def exit_promotion(*args):
@@ -218,6 +264,11 @@ class ChessApp(MDApp):
         lm = logic.Backend.get_all_legal_moves(True)
         logic.Backend.legal_moves_per_square(lm)
         update_theming()
+        for el in gl.theme_elements['MainScreen'].bl.obl.move_list.children:
+            if type(el) == MDScrollView:
+                gl.theme_elements['MainScreen'].bl.obl.move_list.remove_widget(el)
+        mo = MainMenuOptions()
+        gl.theme_elements['MainScreen'].bl.obl.move_list.add_widget(mo)
         return super().on_start()
 
     def build(self):
@@ -228,14 +279,19 @@ class ChessApp(MDApp):
         gl.user_color_theme = deepcopy(gl.themes['color_themes'][gl.themes['user_save']['color_theme']])
         gl.user_piece_set = deepcopy(gl.themes['user_save']['piece_set'])
         self.theme_cls.theme_style = 'Dark'
+        self.theme_cls.material_style = 'M2'
         Window.bind(on_request_close=self.exit_promotion)
         return Builder.load_file(os.path.dirname(__file__) + '\\app.kv')
 
 def update_theming():
     if gl.themes['user_save']['color_theme'].find('Light') > -1:
         app.theme_cls.theme_style = 'Light'
+        # Fix text color
+        gl.theme_elements['MainScreen'].bl.obl.move_list.la.text_color = [0,0,0,1]
     else:
         app.theme_cls.theme_style = 'Dark'
+        # Fix text color
+        gl.theme_elements['MainScreen'].bl.obl.move_list.la.text_color = [1,1,1,1]
     # Main screen background
     gl.theme_elements['MainScreen'].backgr_color = get_color_from_hex(gl.user_color_theme['background_color'])
     # Chess board
@@ -252,6 +308,9 @@ def update_theming():
     gl.theme_elements['BottomClock'].disabled_color = get_color_from_hex(gl.user_color_theme['clock_color_white'])
     # Moves list
     gl.theme_elements['MainScreen'].move_list_backgr_color = get_color_from_hex(gl.user_color_theme['move_list_color'])
+    if logic.list_items:
+        for olli in logic.list_items:
+            olli.text_color = app.theme_cls.text_color
     # Top bar
     gl.theme_elements['MainScreen'].bl.topbar.md_bg_color = gl.user_color_theme['top_bar_color']
 

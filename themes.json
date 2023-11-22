@@ -32,7 +32,9 @@
         }
     },
     "piece_sets": [
-        "Default"
+        "Default",
+        "Alpha",
+        "California"
     ],
     "user_save": {
         "color_theme": "Default Dark",

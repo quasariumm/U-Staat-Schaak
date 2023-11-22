@@ -14,6 +14,7 @@
             pos: self.pos
     MDBoxLayout:
         id: bl
+        obl: obl
         topbar: topbar
         orientation: "vertical"
         MDTopAppBar:
@@ -24,6 +25,7 @@
             right_action_items: [["home", lambda x: app.top_bar_callback('home/end_game'), "home"],["wrench", lambda x: app.top_bar_callback('settings'), "Settings"]]
             
         MDBoxLayout:
+            id: obl
             height: self.parent.height-35
             board: board
             move_list: move_list
@@ -45,7 +47,8 @@
                         radius: [20,]
                 MDLabel:
                     id: la
-                    text:"Moves"
+                    text:"New game"
+                    text_color:[0,0,0,0]
                     valign: "top"
                     halign: "left"
                     padding: [10,10,10,10]
@@ -136,6 +139,7 @@
     Widget:
         Button:
             text: 'Cancel'
+            text_color: [1,1,1,1]
             pos: self.parent.pos
             height: self.parent.height
             width: self.parent.width * 2
@@ -163,7 +167,9 @@
         MDDropDownItem:
             id: di_color
             pos_hint: {'center_x': .5, 'center_y': .5}
-            text: 'eeeeeee'
+            text: ''
+            text_color: [1,1,1,1]
+            background_color: hex('#121212')
             on_release: self.parent.parent.menu_color.open()
     MDBoxLayout:
         id: ps
@@ -173,7 +179,52 @@
         MDDropDownItem:
             id: di_pieces
             pos_hint: {'center_x': .5, 'center_y': .5}
-            text: 'eeeeeee'
+            text: ''
+            text_color: [1,1,1,1]
+            background_color: hex('#121212')
             on_release: self.parent.parent.menu_pieces.open()
+
+<MainMenuOptions>:
+    mode: main.mode
+    main: main
+    MDBoxLayout:
+        id:main
+        mode: mode
+        turn_layout: turn_layout
+        custom_fen: custom_fen
+        orientation: "vertical"
+        spacing: 30
+        size_hint_y: 0.4
+        pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+        MDDropDownItem:
+            id: mode
+            pos_hint: {'center_x': .5}
+            pos_hint_y: None
+            text: 'No bot'
+            on_release: self.parent.parent.menu_mode.open()
+
+        MDBoxLayout:
+            id: turn_layout
+            turn: turn
+            pos_hint: {'center_x': 0.5}
+            MDLabel:
+                text: "Board turns"
+                size_hint_x: 0.35
+            MDSwitch:
+                id: turn
+                pos_hint: {'center_x': .7, 'center_y': .5}
+                size_hint_x: 0.2
+
+        MDTextField:
+            id: custom_fen
+            hint_text: "Custom FEN"
+            helper_text: "Optional. Leave black for normal statring position"
+            helper_mode: "on_focus"
+            pos_hint: {'center_x': 0.5}
+
+        MDFillRoundFlatButton:
+            text: "Start game"
+            pos_hint: {'center_x': 0.5}
+            on_release: self.parent.parent.start_game()
 
 MainScreen:
