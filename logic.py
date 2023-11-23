@@ -14,6 +14,7 @@ from kivymd.uix.scrollview import MDScrollView
 from kivy.clock import mainthread
 
 from app import board, piecesLayout, ChessPromotionUI, app, MainMenuOptions, MovesList
+from app import time_control, increment
 from pieces import White as w
 from pieces import Black as b
 from bot import Calculations, Misc, WHITE, BLACK
@@ -300,6 +301,9 @@ class Frontend():
             return
         Frontend.update_move_list(move, pieceClass)
 
+        if board_turns and not bot_on:
+            gl.theme_elements['ChessBoard'].turn_board()
+
         if (bot_color == BLACK and white_to_move) or (bot_color == WHITE and not white_to_move):return
         if not bot_on: return
         bot_move = True
@@ -309,12 +313,18 @@ class Frontend():
         global movenum, move_list, list_items, moves_fen, moves_posfen, selected
         global white_to_move, fiftymoverule, white_king_index, black_king_index
         global moves_list, started
+        global t_clock, b_clock
         with open(os.path.dirname(__file__) + "\\data\\log\\latest.log", 'w') as f:
             f.write('\n'.join(moves_fen))
             f.close()
         movenum = 0; move_list = []; list_items = []; moves_fen = []; moves_posfen = []; selected = None
         white_to_move = True; fiftymoverule = 0; white_king_index = 4; black_king_index = 60; moves_list = []
         started = False
+        if t_clock and b_clock:
+            if t_clock.started:
+                t_clock.toggle()
+            if b_clock.started:
+                b_clock.toggle()
         Frontend.switch_movelist_mainmenu()
         Backend.load_fen('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
         lm = Backend.get_all_legal_moves(white_to_move)
@@ -457,22 +467,24 @@ class Clock():
         self.started = False
         self.clockWidget = clock
 
-    def clock(self,t):
-        while self.totaltime<t and self.started:
+    def clock(self):
+        while self.totaltime<time_control and self.started:
             self.totaltime = round((time.time() - self.starttime), 2)
-            mins, secs = math.ceil((t-self.totaltime+1)/60)-1, math.ceil(t-self.totaltime)%60
+            mins, secs = math.ceil((time_control-self.totaltime+1)/60)-1, math.ceil(time_control-self.totaltime)%60
             timeformat= '{:02d}:{:02d}'.format(mins,secs)
             self.clockWidget.text = timeformat
             time.sleep(0.02)
             # print(timeformat, end='\r')
 
-    def toggle(self,t=0):
+    def toggle(self):
         if not self.started:
             self.starttime = time.time() - self.totaltime
             self.started = True
-            Thread(target= self.clock, args= [t]).start()
+            Thread(target=self.clock).start()
         else:
             self.started = False
+            self.totaltime += increment
+            self.clockWidget.text = '{:02d}:{:02d}'.format(math.ceil((time_control-self.totaltime+1)/60)-1, math.ceil(time_control-self.totaltime)%60)
         return
 
 class Backend():
@@ -644,6 +656,14 @@ class Backend():
                     Backend.make_unmake_move(s_index, t_index, flag, white, sname=sname, tname=tname)
                     continue
                 if not Backend.check_index_overlap(attacking_bitboard, t_index):
+                    if check or checkk:
+                        sname, tname = Backend.make_unmake_move(s_index, t_index, flag, white)
+                        lm = Backend.get_all_legal_moves(not white, attsquares=True)
+                        if np.where(lm == t_index)[0].size == 0:
+                            possible_moves[p_counter] = move
+                            p_counter += 1
+                        Backend.make_unmake_move(s_index, t_index, flag, white, sname=sname, tname=tname)
+                        continue
                     possible_moves[p_counter] = move
                     p_counter += 1
                     continue

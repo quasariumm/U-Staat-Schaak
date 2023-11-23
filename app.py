@@ -31,6 +31,7 @@ Config.set('input', 'mouse', 'mouse,disable_multitouch')
 
 board = [None] * 64
 time_control = 600
+increment = 0
 
 app:MDApp = None
 #                                                        .::.
@@ -89,6 +90,7 @@ class ChessBoard(MDGridLayout):
     
     def turn_board(self) -> None:
         self.orientation = 'rl-tb' if self.orientation == 'lr-bt' else 'lr-bt'
+        gl.theme_elements['MainScreen'].clocks_switched = 0 if gl.theme_elements['MainScreen'].clocks_switched == 1 else 1
 
 class ChessBoardSquare(Button):
     def pressAction(button):
@@ -205,6 +207,7 @@ class MainMenuOptions(MDBoxLayout):
 
     def set_item(self, value:str) -> None:
         self.mode.set_item(value)
+        self.mode_choice = value
         self.menu_mode.dismiss()
     
     def start_game(self) -> None:
@@ -217,12 +220,19 @@ class MainMenuOptions(MDBoxLayout):
             case 'Bot vs bot':
                 logic.bot_color = 2
         logic.board_turns = self.main.turn_layout.turn.active
+        logic.time_control = 60*int(self.main.time.min.text)+int(self.main.time.sec.text)
+        logic.increment = int(self.main.time.inc.text)
         custom_fen = self.main.custom_fen.text
         if custom_fen != '':
             logic.Backend.load_fen(custom_fen)
+            lm = logic.Backend.get_all_legal_moves(logic.white_to_move)
+            logic.Backend.legal_moves_per_square(lm)
         logic.started = True
+        logic.t_clock.toggle()
+        logic.b_clock.toggle()
         logic.Frontend.switch_movelist_mainmenu()
         if logic.bot_on and logic.bot_color == 1:
+            gl.theme_elements['ChessBoard'].turn_board()
             Thread(target=Calculations.minimax, kwargs={'depth': 4, 'alpha':-math.inf, 'beta':math.inf, 'max_player':logic.white_to_move, 'max_color':1, 'check':logic.check, 'begin_d':4}).start()
 
 class ChessApp(MDApp):
@@ -238,8 +248,6 @@ class ChessApp(MDApp):
         logic.bottomClock.text = '{:02d}:{:02d}'.format(math.floor(time_control/60), time_control%60)
         logic.t_clock = logic.Clock(clock=logic.topClock)
         logic.b_clock = logic.Clock(clock=logic.bottomClock)
-        logic.t_clock.toggle(t=time_control)
-        logic.b_clock.toggle(t=time_control)
     
     def top_bar_callback(self, option):
         print(option)
@@ -251,6 +259,8 @@ class ChessApp(MDApp):
             popup = Popup(title='Settings', content=sm, size_hint=(0.5,0.3))
             popup.open()
             popup.bind(on_dismiss=SettingsMenu.on_dismiss)
+        elif option == 'end_game' and logic.started:
+            logic.Frontend.reset_game()
     
     def on_stop(self):
         if logic.t_clock and logic.b_clock:

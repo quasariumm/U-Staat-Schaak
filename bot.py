@@ -221,6 +221,8 @@ class Calculations():
         if depth == begin_d:
             # Make the move
             fi, ti, flag = logic.Utils.move_to_fi_ti_flag(best_move)
+            logic.selected = logic.board[fi]
+            logic.tempBackground_color = logic.board[fi].background_color
             if flag[0] not in ['p', 'q']:
                 logic.Frontend.move(logic.board[fi], logic.board[ti])
             else:

@@ -34,10 +34,14 @@
     "piece_sets": [
         "Default",
         "Alpha",
-        "California"
+        "California",
+        "Chessnut",
+        "Horsey",
+        "Kosal",
+        "Maestro"
     ],
     "user_save": {
         "color_theme": "Default Dark",
-        "piece_set": "Default"
+        "piece_set": "Maestro"
     }
 }

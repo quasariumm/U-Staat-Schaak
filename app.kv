@@ -5,6 +5,7 @@
 <MainScreen>:
     backgr_color: 0,0,0,1
     move_list_backgr_color: .25,.27,.27,1
+    clocks_switched: 0
     bl: bl
     canvas:
         Color:
@@ -22,7 +23,7 @@
             height: 35
             title: "Chess app"
             use_overflow: True
-            right_action_items: [["home", lambda x: app.top_bar_callback('home/end_game'), "home"],["wrench", lambda x: app.top_bar_callback('settings'), "Settings"]]
+            right_action_items: [["flag", lambda x: app.top_bar_callback('end_game'), "end game"],["wrench", lambda x: app.top_bar_callback('settings'), "Settings"]]
             
         MDBoxLayout:
             id: obl
@@ -69,14 +70,14 @@
                     size_hint_y: .075
                     size_hint_x: .35
                     size_hint_max_x: root.width - self.x - 5
-                    pos_hint: {"top": 1-((self.parent.parent.height-board.height)/2)/self.parent.parent.height}
+                    pos_hint: {"top": 1-((self.parent.parent.height-board.height)/2)/self.parent.parent.height} if root.clocks_switched == 0 else {"top": ((self.parent.parent.height-board.height)/2+self.height)/self.parent.parent.height}
                     text_size: (self.width - dp(32), None)
                     font_size: self.width / 6
                 BottomClock:
                     size_hint_y: .075
                     size_hint_x: .35
                     size_hint_max_x: root.width - self.x - 5
-                    pos_hint: {"top": ((self.parent.parent.height-board.height)/2+self.height)/self.parent.parent.height}
+                    pos_hint: {"top": ((self.parent.parent.height-board.height)/2+self.height)/self.parent.parent.height} if root.clocks_switched == 0 else {"top": 1-((self.parent.parent.height-board.height)/2)/self.parent.parent.height}
                     text_size: (self.width - dp(32), None)
                     font_size: self.width / 6
 
@@ -192,9 +193,10 @@
         mode: mode
         turn_layout: turn_layout
         custom_fen: custom_fen
+        time: time
         orientation: "vertical"
         spacing: 30
-        size_hint_y: 0.4
+        size_hint_y: 0.6
         pos_hint: {'center_x': 0.5, 'center_y': 0.5}
         MDDropDownItem:
             id: mode
@@ -215,6 +217,39 @@
                 pos_hint: {'center_x': .7, 'center_y': .5}
                 size_hint_x: 0.2
 
+        MDBoxLayout:
+            id: time
+            fields: fields
+            min: fields.min
+            sec: fields.sec
+            inc: fields.inc
+            MDLabel:
+                text: "Time:"
+                size_hint_x: 0.5
+            MDBoxLayout:
+                id: fields
+                min: min
+                sec: sec
+                inc: inc
+                MDTextField:
+                    id: min
+                    text: "10"
+                    hint_text: "min"
+                    input_filter: "int"
+                    pos_hint: {'center_y':0.5}
+                MDTextField:
+                    id: sec
+                    text: "0"
+                    hint_text: "sec"
+                    input_filter: "int"
+                    pos_hint: {'center_y':0.5}
+                MDTextField:
+                    id: inc
+                    text: "0"
+                    hint_text: "inc"
+                    input_filter: "int"
+                    pos_hint: {'center_y':0.5}
+        
         MDTextField:
             id: custom_fen
             hint_text: "Custom FEN"
