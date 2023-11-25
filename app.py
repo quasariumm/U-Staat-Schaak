@@ -149,7 +149,8 @@ class SettingsMenu(MDBoxLayout):
                 "viewclass": "OneLineListItem",
                 "text": f"{ct}",
                 "text_color":[1,1,1,1],
-                "height": dp(56),
+                "height": dp(48),
+                "ver_growth":"down",
                 "on_release": lambda x=f"{ct}": self.set_item(self.menu_color, self.di_color, x),
             } for ct in self.color_themes
         ]
@@ -161,12 +162,15 @@ class SettingsMenu(MDBoxLayout):
                 "viewclass":"OneLineListItem",
                 "text": f"{ps}",
                 "text_color":[1,1,1,1],
-                "height": dp(56),
+                "height": dp(48),
+                "ver_growth":"down",
                 "on_release": lambda x=f"{ps}": self.set_item(self.menu_pieces, self.di_pieces, x),
             } for ps in self.piece_sets
         ]
         self.di_pieces.text = gl.themes['user_save']['piece_set']
         self.menu_pieces = MDDropdownMenu(caller=self.di_pieces, items=menu_items_pieces, position='bottom', width_mult=4, background_color=get_color_from_hex('#121212'))
+        self.menu_color.max_height = dp(4 * 48)
+        self.menu_pieces.max_height = dp(4 * 48)
         self.menu_color.bind()
         self.menu_pieces.bind()
     
@@ -199,6 +203,7 @@ class MainMenuOptions(MDBoxLayout):
                 "viewclass": "OneLineListItem",
                 "text": m,
                 "height": dp(56),
+                "ver_growth":"down",
                 "on_release": lambda x=m: self.set_item(x)
             } for m in ['No bot', 'Bot as white', 'Bot as black', 'Bot vs bot']
         ]
@@ -225,8 +230,8 @@ class MainMenuOptions(MDBoxLayout):
         custom_fen = self.main.custom_fen.text
         if custom_fen != '':
             logic.Backend.load_fen(custom_fen)
-            lm = logic.Backend.get_all_legal_moves(logic.white_to_move)
-            logic.Backend.legal_moves_per_square(lm)
+        else:
+            logic.Backend.load_fen('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
         logic.started = True
         logic.t_clock.toggle()
         logic.b_clock.toggle()

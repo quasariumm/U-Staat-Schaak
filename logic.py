@@ -279,7 +279,6 @@ class Frontend():
         Backend.update_pieces_layout()
         Backend.update_bitboards(white_to_move)
         check = Backend.check_index_overlap(attacking_bitboard, white_king_index if white_to_move else black_king_index)
-        print('check' if check else 'not check')
         Frontend.clear_legal_moves_indicators()
         movenum+=1
         moves_list.append(move)
@@ -287,7 +286,6 @@ class Frontend():
         Backend.legal_moves_per_square(lm)
         # NOTE: The draw local variable gives the type of draw (Stalemate, 50-move rule, threefold repitition)
         mate, draw = Backend.mate_and_draw(move)
-        print(f'mate: {mate}, draw: {draw}')
         fen = Utils.position_to_fen()[0]
         moves_fen.append(fen)
         moves_posfen.append(fen.split(' ', maxsplit=1)[0])
@@ -327,8 +325,6 @@ class Frontend():
                 b_clock.toggle()
         Frontend.switch_movelist_mainmenu()
         Backend.load_fen('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
-        lm = Backend.get_all_legal_moves(white_to_move)
-        Backend.legal_moves_per_square(lm)
     
     def test_bot_callback(result:tuple[int,float]):
         fi, _, _ = Utils.move_to_fi_ti_flag(result[0])
@@ -474,7 +470,6 @@ class Clock():
             timeformat= '{:02d}:{:02d}'.format(mins,secs)
             self.clockWidget.text = timeformat
             time.sleep(0.02)
-            # print(timeformat, end='\r')
 
     def toggle(self):
         if not self.started:
@@ -1005,6 +1000,8 @@ class Backend():
                 counter += 1
         Backend.update_pieces_layout()
         Backend.update_bitboards(white_move == 'w')
+        lm = Backend.get_all_legal_moves(white_to_move)
+        Backend.legal_moves_per_square(lm)
 
 class Utils():
     def toggle_bit(board:int, i:int) -> int:
