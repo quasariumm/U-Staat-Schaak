@@ -1,54 +1,88 @@
 #:kivy 1.1.1
 #:import hex kivy.utils.get_color_from_hex
-#:import Svg kivy.graphics.svg.Svg
+#:import dp kivy.metrics.dp
 
-#:set board_prim "#795C34"
-#:set board_sec "#E4D9CA"
 <MainScreen>:
+    backgr_color: 0,0,0,1
+    move_list_backgr_color: .25,.27,.27,1
+    clocks_switched: 0
+    bl: bl
+    canvas:
+        Color:
+            rgba: root.backgr_color
+        Rectangle:
+            size: self.size
+            pos: self.pos
     MDBoxLayout:
-        board: board
-        padding: [5,0,5,0]
+        id: bl
+        obl: obl
+        topbar: topbar
+        orientation: "vertical"
+        MDTopAppBar:
+            id: topbar
+            height: 35
+            title: "Chess app"
+            use_overflow: True
+            right_action_items: [["flag", lambda x: app.top_bar_callback('end_game'), "end game"],["wrench", lambda x: app.top_bar_callback('settings'), "Settings"]]
+            
         MDBoxLayout:
-            orientation: "vertical"
-            size_hint_y: None
-            height: board.width
-            pos_hint: {"center_y":0.5}
-            size_hint_x: 0.25
-            canvas.before:
-                Color:
-                    rgba: 0.25, 0.27, 0.27, 1
-                RoundedRectangle:
-                    pos: self.pos
-                    size: self.size
-                    radius: [20,]
-            MDLabel:
-                text:"Moves"
-                valign: "top"
-                halign: "left"
-                padding: [10,10,10,10]
-                size_hint_y: 0.075
-                text_size: (self.width - 20, self.height)
-            MDScrollView:
-                size_hint_y: 0.8
-                padding: [20,0,20,30]
-                MovesList:
-        ChessBoard:
-            id:board
-            padding:[30,0,10,0]
-        MDRelativeLayout:
-            size_hint_y: 1
-            size_hint_x: 0.25
-            TopClock:
-                size_hint_y: .075
-                size_hint_x: .35
-                pos_hint: {"top": 1-((self.parent.parent.height-board.height)/2)/self.parent.parent.height}
-            BottomClock:
-                size_hint_y: .075
-                size_hint_x: .35
-                pos_hint: {"top": ((self.parent.parent.height-board.height)/2+self.height)/self.parent.parent.height}
+            id: obl
+            height: self.parent.height-35
+            board: board
+            move_list: move_list
+            padding: [5,0,5,0]
+            MDBoxLayout:
+                id: move_list
+                la: la
+                orientation: "vertical"
+                size_hint_y: None
+                height: board.width
+                pos_hint: {"center_y":0.5}
+                size_hint_x: 0.25
+                canvas.before:
+                    Color:
+                        rgba: root.move_list_backgr_color
+                    RoundedRectangle:
+                        pos: self.pos
+                        size: self.size
+                        radius: [20,]
+                MDLabel:
+                    id: la
+                    text:"New game"
+                    text_color:[0,0,0,0]
+                    valign: "top"
+                    halign: "left"
+                    padding: [10,10,10,10]
+                    size_hint_y: 0.075
+                    text_size: (self.width - 20, self.height)
+                MDScrollView:
+                    size_hint_y: 0.8
+                    padding: [20,0,20,30]
+                    MovesList:
+            ChessBoard:
+                id:board
+                padding:[30,0,10,0]
+                width: 0.6*root.width if 0.6*root.width<=0.95*self.parent.height else 0.95*self.parent.height
+            MDRelativeLayout:
+                size_hint_y: 1
+                size_hint_x: 0.25
+                TopClock:
+                    size_hint_y: .075
+                    size_hint_x: .35
+                    size_hint_max_x: root.width - self.x - 5
+                    pos_hint: {"top": 1-((self.parent.parent.height-board.height)/2)/self.parent.parent.height} if root.clocks_switched == 0 else {"top": ((self.parent.parent.height-board.height)/2+self.height)/self.parent.parent.height}
+                    text_size: (self.width - dp(32), None)
+                    font_size: self.width / 6
+                BottomClock:
+                    size_hint_y: .075
+                    size_hint_x: .35
+                    size_hint_max_x: root.width - self.x - 5
+                    pos_hint: {"top": ((self.parent.parent.height-board.height)/2+self.height)/self.parent.parent.height} if root.clocks_switched == 0 else {"top": 1-((self.parent.parent.height-board.height)/2)/self.parent.parent.height}
+                    text_size: (self.width - dp(32), None)
+                    font_size: self.width / 6
 
 <TopClock>:
-    text: '10:29'
+    text: '10:00'
     disabled: True
     background_color: hex("#ffffff")
     disabled_color: hex("#ffffff")
@@ -57,7 +91,7 @@
     icon: "clock-outline"
 
 <BottomClock>:
-    text: '10:29'
+    text: '10:00'
     disabled: True
     background_color: hex("#ffffff")
     disabled_color: hex("#ffffff")
@@ -68,6 +102,7 @@
 <ChessBoardSquare>:
     background_normal: ""
     background_down: ""
+    background_color: (0,0,0,0)
     border: [0,0,0,0]
     image:image
     on_press: self.pressAction()
@@ -105,6 +140,7 @@
     Widget:
         Button:
             text: 'Cancel'
+            text_color: [1,1,1,1]
             pos: self.parent.pos
             height: self.parent.height
             width: self.parent.width * 2
@@ -112,9 +148,118 @@
 
 <ChessBoard>:
     height: self.width
-    size_hint: 0.5, None
+    size_hint: None, None
     pos_hint: {"center_y":0.5}
 
 <MovesList>:
+
+<SettingsMenu>:
+    di_color: ct.di_color
+    di_pieces: ps.di_pieces
+    ct: ct
+    ps: ps
+    orientation: "vertical"
+
+    MDBoxLayout:
+        id: ct
+        di_color: di_color
+        MDLabel:
+            text: "Color theme: "
+        MDDropDownItem:
+            id: di_color
+            pos_hint: {'center_x': .5, 'center_y': .5}
+            text: ''
+            text_color: [1,1,1,1]
+            background_color: hex('#121212')
+            on_release: self.parent.parent.menu_color.open()
+    MDBoxLayout:
+        id: ps
+        di_pieces: di_pieces
+        MDLabel:
+            text: "Piece set: "
+        MDDropDownItem:
+            id: di_pieces
+            pos_hint: {'center_x': .5, 'center_y': .5}
+            text: ''
+            text_color: [1,1,1,1]
+            background_color: hex('#121212')
+            on_release: self.parent.parent.menu_pieces.open()
+
+<MainMenuOptions>:
+    mode: main.mode
+    main: main
+    MDBoxLayout:
+        id:main
+        mode: mode
+        turn_layout: turn_layout
+        custom_fen: custom_fen
+        time: time
+        orientation: "vertical"
+        spacing: 30
+        size_hint_y: 0.6
+        pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+        MDDropDownItem:
+            id: mode
+            pos_hint: {'center_x': .5}
+            pos_hint_y: None
+            text: 'No bot'
+            on_release: self.parent.parent.menu_mode.open()
+
+        MDBoxLayout:
+            id: turn_layout
+            turn: turn
+            pos_hint: {'center_x': 0.5}
+            MDLabel:
+                text: "Board turns"
+                size_hint_x: 0.35
+            MDSwitch:
+                id: turn
+                pos_hint: {'center_x': .7, 'center_y': .5}
+                size_hint_x: 0.2
+
+        MDBoxLayout:
+            id: time
+            fields: fields
+            min: fields.min
+            sec: fields.sec
+            inc: fields.inc
+            MDLabel:
+                text: "Time:"
+                size_hint_x: 0.5
+            MDBoxLayout:
+                id: fields
+                min: min
+                sec: sec
+                inc: inc
+                MDTextField:
+                    id: min
+                    text: "10"
+                    hint_text: "min"
+                    input_filter: "int"
+                    pos_hint: {'center_y':0.5}
+                MDTextField:
+                    id: sec
+                    text: "0"
+                    hint_text: "sec"
+                    input_filter: "int"
+                    pos_hint: {'center_y':0.5}
+                MDTextField:
+                    id: inc
+                    text: "0"
+                    hint_text: "inc"
+                    input_filter: "int"
+                    pos_hint: {'center_y':0.5}
+        
+        MDTextField:
+            id: custom_fen
+            hint_text: "Custom FEN"
+            helper_text: "Optional. Leave black for normal statring position"
+            helper_mode: "on_focus"
+            pos_hint: {'center_x': 0.5}
+
+        MDFillRoundFlatButton:
+            text: "Start game"
+            pos_hint: {'center_x': 0.5}
+            on_release: self.parent.parent.start_game()
 
 MainScreen:

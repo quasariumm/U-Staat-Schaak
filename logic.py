@@ -9,16 +9,24 @@ from kivy.utils import get_color_from_hex
 from kivy.uix.button import Button
 from kivymd.uix.list import OneLineListItem
 from kivy.uix.popup import Popup
+from kivymd.uix.label import MDLabel
+from kivymd.uix.scrollview import MDScrollView
 from kivy.clock import mainthread
 
-from app import board_prim, board, piecesLayout, ChessPromotionUI, time_control
+from app import board, piecesLayout, ChessPromotionUI, app, MainMenuOptions, MovesList
+from app import time_control, increment
 from pieces import White as w
 from pieces import Black as b
 from bot import Calculations, Misc, WHITE, BLACK
 
+import global_vars as gl
+
 movenum=0
 move_list = []
 list_items=[]
+
+moves_fen = []
+moves_posfen = []
 
 selected : Button = None
 tempBackground_color = []
@@ -114,7 +122,12 @@ promotionType = ''
 promotionEvent = Event()
 
 bot_on = False
+# NOTE: if bot_color is 2 it's a bot vs bot game
 bot_color = WHITE
+bot_move = False
+
+board_turns = False
+started = False
 
 class Tests():
     pass
@@ -125,6 +138,8 @@ class Frontend():
         global tempBackground_color
         global white_to_move
         row, file = Utils.button_to_rowfile(button)
+        if not started or bot_move:
+            return
 
         if selected != None :
             if selected != button:
@@ -137,7 +152,7 @@ class Frontend():
             selected = button
             tempBackground_color = selected.background_color
             r,g,bl,a = selected.background_color
-            selected.background_color = [r*0.5, g, bl, a] if selected.background_color == get_color_from_hex(board_prim) else [r*0.75, g, bl, a]
+            selected.background_color = [r*0.5, g, bl, a] if selected.background_color == get_color_from_hex(gl.user_color_theme['board_prim']) else [r*0.75, g, bl, a]
             if (issubclass(type(piecesLayout[row][file]), (w.Pawn, w.King, w.Knight, w.Bishop, w.Rook, w.Queen)) and white_to_move) or (issubclass(type(piecesLayout[row][file]), (b.Pawn, b.King, b.Knight, b.Bishop, b.Rook, b.Queen)) and not white_to_move):
                 Frontend.show_legal_move_indicators(button)
         elif piecesLayout[row][file] == None and selected == None:
@@ -152,7 +167,7 @@ class Frontend():
             selected = button
             tempBackground_color = selected.background_color
             r,g,bl,a = selected.background_color
-            selected.background_color = [r*0.5, g, bl, a] if selected.background_color == get_color_from_hex(board_prim) else [r*0.75, g, bl, a]
+            selected.background_color = [r*0.5, g, bl, a] if selected.background_color == get_color_from_hex(gl.user_color_theme['board_prim']) else [r*0.75, g, bl, a]
             if (issubclass(type(piecesLayout[row][file]), (w.Pawn, w.King, w.Knight, w.Bishop, w.Rook, w.Queen)) and white_to_move) or (issubclass(type(piecesLayout[row][file]), (b.Pawn, b.King, b.Knight, b.Bishop, b.Rook, b.Queen)) and not white_to_move):
                 Frontend.show_legal_move_indicators(button)
         
@@ -259,28 +274,63 @@ class Frontend():
         global movenum, check, mate
         global attacking_bitboard, white_king_index, black_king_index
         global bot_color, bot_on, white_to_move
+        global moves_list
+        global moves_fen, moves_posfen
+        global bot_move
         global t_clock, b_clock
         Backend.update_pieces_layout()
         Backend.update_bitboards(white_to_move)
         b_clock.toggle(t=time_control)
         t_clock.toggle(t=time_control)
         check = Backend.check_index_overlap(attacking_bitboard, white_king_index if white_to_move else black_king_index)
-        print('check' if check else 'not check')
         Frontend.clear_legal_moves_indicators()
         movenum+=1
+        moves_list.append(move)
         lm = Backend.get_all_legal_moves(white_to_move)
         Backend.legal_moves_per_square(lm)
         # NOTE: The draw local variable gives the type of draw (Stalemate, 50-move rule, threefold repitition)
         mate, draw = Backend.mate_and_draw(move)
-        print(f'mate: {mate}, draw: {draw}')
-        print(Utils.position_to_fen()[0])
+        fen = Utils.position_to_fen()[0]
+        moves_fen.append(fen)
+        moves_posfen.append(fen.split(' ', maxsplit=1)[0])
+        if mate:
+            Frontend.invoke_popup(f"{'Black' if white_to_move else 'White'} won by checkmate")
+            Frontend.reset_game()
+            return
+        if draw != '':
+            Frontend.invoke_popup(f"Draw by {draw}")
+            Frontend.reset_game()
+            return
         Frontend.update_move_list(move, pieceClass)
-        # NOTE: Test
-        # mp.Process(target=Calculations.minimax, kwargs={'depth': 4, 'alpha':-math.inf, 'beta':math.inf, 'max_player':white_to_move, 'max_color':WHITE, 'check':check, 'begin_d':4}).start()
+
+        if board_turns and not bot_on:
+            gl.theme_elements['ChessBoard'].turn_board()
+
         if (bot_color == BLACK and white_to_move) or (bot_color == WHITE and not white_to_move):return
         if not bot_on: return
+        bot_move = True
         Thread(target=Calculations.minimax, kwargs={'depth': 4, 'alpha':-math.inf, 'beta':math.inf, 'max_player':white_to_move, 'max_color':WHITE, 'check':check, 'begin_d':4}).start()
 
+    def reset_game() -> None:
+        global movenum, move_list, list_items, moves_fen, moves_posfen, selected
+        global white_to_move, fiftymoverule, white_king_index, black_king_index
+        global moves_list, started
+        global t_clock, b_clock
+        global check
+        with open(os.path.dirname(__file__) + "\\data\\log\\latest.log", 'w') as f:
+            f.write('\n'.join(moves_fen))
+            f.close()
+        movenum = 0; move_list = []; list_items = []; moves_fen = []; moves_posfen = []; selected = None
+        white_to_move = True; fiftymoverule = 0; white_king_index = 4; black_king_index = 60; moves_list = []
+        started = False; check = False
+        if t_clock and b_clock:
+            if t_clock.started:
+                t_clock.toggle()
+            if b_clock.started:
+                b_clock.toggle()
+        Frontend.switch_movelist_mainmenu()
+        Backend.load_fen('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
+    
     def test_bot_callback(result:tuple[int,float]):
         fi, _, _ = Utils.move_to_fi_ti_flag(result[0])
         piece_type = Utils.get_piece_type(fi)()
@@ -292,7 +342,7 @@ class Frontend():
         promotionEvent.clear()
         promotionStatus = 0
     
-    def promotionMove(check_piece, dest:Button, popup:Popup):
+    def promotionMove(check_piece, dest:Button, popup:Popup, bot_move:bool=False):
         global selected
         global tempBackground_color
         global white_to_move
@@ -301,12 +351,13 @@ class Frontend():
         global white_king_moved, white_krook_moved, white_qrook_moved, black_king_moved, black_krook_moved, black_qrook_moved
         global legal_moves_per_square, legal_moves_flags
         global promotionStatus, promotionEvent
-        promotionEvent.wait()
-        if promotionStatus == 2:
+        if not bot_move:
+            promotionEvent.wait()
+            if promotionStatus == 2:
+                popup.dismiss()
+                Frontend.reset_event()
+                return 418
             popup.dismiss()
-            Frontend.reset_event()
-            return 418
-        popup.dismiss()
         Frontend.reset_event()
         row, file = Utils.button_to_rowfile(selected)
         check_pieceClass = Utils.get_piece_type(8*row+file)()
@@ -380,8 +431,7 @@ class Frontend():
         return newformat
 
     def update_move_list(move:int, pieceClass) -> None:
-        global movenum, list_items, moves_list
-        moves_list.append(move)
+        global movenum, list_items
         newformat = Frontend.move_other_format(move, pieceClass)
         if movenum%2==1:
             li=OneLineListItem(text=f"{math.ceil(movenum/2)}. {newformat}")
@@ -389,6 +439,27 @@ class Frontend():
             list_items.append(li)
         else:
             list_items[int(movenum/2-1)].text+=f' {newformat}'
+    
+    def invoke_popup(message:str) -> None:
+        popup = Popup(title='Game over', content = MDLabel(text=message), size_hint=(0.25, 0.15), padding=[25,0,25,0])
+        popup.open()
+    
+    def switch_movelist_mainmenu() -> None:
+        if started:
+            for el in gl.theme_elements['MainScreen'].bl.obl.move_list.children:
+                if type(el) != MDLabel:
+                    gl.theme_elements['MainScreen'].bl.obl.move_list.remove_widget(el)
+            scroll_view = MDScrollView(size_hint_y=0.8,padding=[20,0,20,30])
+            scroll_view.add_widget(MovesList())
+            gl.theme_elements['MainScreen'].bl.obl.move_list.add_widget(scroll_view)
+            gl.theme_elements['MainScreen'].bl.obl.move_list.la.text = 'Moves'
+        else:
+            for el in gl.theme_elements['MainScreen'].bl.obl.move_list.children:
+                if type(el) == MDScrollView:
+                    gl.theme_elements['MainScreen'].bl.obl.move_list.remove_widget(el)
+            mmo = MainMenuOptions()
+            gl.theme_elements['MainScreen'].bl.obl.move_list.add_widget(mmo)
+            gl.theme_elements['MainScreen'].bl.obl.move_list.la.text = 'New game'
 
 class Clock(): 
     def __init__(self, clock) -> None:
@@ -397,21 +468,23 @@ class Clock():
         self.started = False
         self.clockWidget = clock
 
-    def clock(self,t):
-        while self.totaltime<t and self.started:
+    def clock(self):
+        while self.totaltime<time_control and self.started:
             self.totaltime = round((time.time() - self.starttime), 2)
-            mins, secs = math.ceil((t-self.totaltime+1)/60)-1, math.ceil(t-self.totaltime)%60
+            mins, secs = math.ceil((time_control-self.totaltime+1)/60)-1, math.ceil(time_control-self.totaltime)%60
             timeformat= '{:02d}:{:02d}'.format(mins,secs)
             self.clockWidget.text = timeformat
             time.sleep(0.02)
 
-    def toggle(self,t=0):
+    def toggle(self):
         if not self.started:
             self.starttime = time.time() - self.totaltime
             self.started = True
-            Thread(target= self.clock, args= [t]).start()
+            Thread(target=self.clock).start()
         else:
             self.started = False
+            self.totaltime += increment
+            self.clockWidget.text = '{:02d}:{:02d}'.format(math.ceil((time_control-self.totaltime+1)/60)-1, math.ceil(time_control-self.totaltime)%60)
         return
 
 class Backend():
@@ -583,6 +656,14 @@ class Backend():
                     Backend.make_unmake_move(s_index, t_index, flag, white, sname=sname, tname=tname)
                     continue
                 if not Backend.check_index_overlap(attacking_bitboard, t_index):
+                    if check or checkk:
+                        sname, tname = Backend.make_unmake_move(s_index, t_index, flag, white)
+                        lm = Backend.get_all_legal_moves(not white, attsquares=True)
+                        if np.where(lm == t_index)[0].size == 0:
+                            possible_moves[p_counter] = move
+                            p_counter += 1
+                        Backend.make_unmake_move(s_index, t_index, flag, white, sname=sname, tname=tname)
+                        continue
                     possible_moves[p_counter] = move
                     p_counter += 1
                     continue
@@ -592,6 +673,14 @@ class Backend():
             # If the king is in check and it needs to move, the previous if-statement will also
             # result in True, so we only have to check if other pieces can block
             if check or checkk:
+                if flag in ['c', 'e'] or flag[0]=='q':
+                    sname, tname = Backend.make_unmake_move(s_index, t_index, flag, white)
+                    lm = Backend.get_all_legal_moves(not white, attsquares=True)
+                    if np.where(lm == (white_king_index if white else black_king_index))[0].size == 0:
+                        possible_moves[p_counter] = move
+                        p_counter += 1
+                    Backend.make_unmake_move(s_index, t_index, flag, white, sname=sname, tname=tname)
+                    continue
                 if Backend.check_index_overlap(king_attack_bitboard, t_index):
                     possible_moves[p_counter] = move
                     p_counter += 1
@@ -626,10 +715,11 @@ class Backend():
     
     def mate_and_draw(move:int) -> tuple[bool, str]:
         global check, legal_moves_per_square, repitition, fiftymoverule
+        global moves_posfen
         if check and not legal_moves_per_square:
             return True, ''
         elif not legal_moves_per_square:
-            return False, 'Stalemate'
+            return False, 'stalemate'
         _, ti, flag = Utils.move_to_fi_ti_flag(move)
         if flag in ['c', 'e', 'qq', 'qr', 'qb', 'qn'] or issubclass(Utils.get_piece_type(ti), (w.Pawn, b.Pawn)):
             fiftymoverule = 0
@@ -637,7 +727,14 @@ class Backend():
             fiftymoverule += 1
         if fiftymoverule >= 50:
             return False, '50-move rule'
-        # TODO: repitition
+        if moves_posfen:
+            if moves_posfen.count(max(set(moves_posfen), key=moves_posfen.count)) == 3:
+                return False, 'threefold repitition'
+        typeList = Misc.piecesTypesList()
+        white_insufficient = (typeList.count(w.Pawn) == 0 and typeList.count(w.Queen) == 0 and typeList.count(w.Rook) == 0 and typeList.count(w.Knight) + typeList.count(w.Bishop) <= 1)
+        black_insufficient = (typeList.count(b.Pawn) == 0 and typeList.count(b.Queen) == 0 and typeList.count(b.Rook) == 0 and typeList.count(b.Knight) + typeList.count(b.Bishop) <= 1)
+        if white_insufficient and black_insufficient:
+            return False, 'insufficient material'
         return False, ''
     
     def make_unmake_move(s_index:int, t_index:int, flag:str, white:bool, sname=None, tname=None) -> tuple[str, str] | None:
@@ -849,6 +946,7 @@ class Backend():
         return pinnypinny
         
     def update_pieces_layout():
+        global board
         dictt={
             'wk': w.King(),
             'wp': w.Pawn(),
@@ -868,6 +966,55 @@ class Backend():
             row = math.floor((int(square.text)-1)/8)
             file = (int(square.text)-1)%8
             piecesLayout[row][file]= piece
+    
+    def load_fen(fen:str) -> None|str:
+        global fiftymoverule, white_to_move
+        global white_king_moved, black_king_moved
+        global white_king_index, black_king_index
+        global board
+        global check
+        pieces_fen = {
+            'K': w.King(),
+            'N': w.Knight(),
+            'P': w.Pawn(),
+            'Q': w.Queen(),
+            'R': w.Rook(),
+            'B': w.Bishop(),
+            'k': b.King(),
+            'n': b.Knight(),
+            'p': b.Pawn(),
+            'q': b.Queen(),
+            'r': b.Rook(),
+            'b': b.Bishop()
+        }
+        counter = 0
+        posfen, white_move, castle, _, fiftymovecounter, _ = fen.split(' ', maxsplit=100)
+        white_to_move = white_move == 'w'
+        white_king_moved = not castle.find('KQ') > -1
+        black_king_moved = not castle.find('kq') > -1
+        fiftymoverule = int(fiftymovecounter)
+        if posfen.count('K') != 1 or posfen.count('k') != 1:
+            return 'error'
+        for el in board:
+            el.image.source = ''
+        for l in posfen:
+            if l == '/':
+                continue
+            elif l in ['1', '2', '3', '4', '5', '6', '7', '8']:
+                for i in range(int(l)):
+                    board[(56-8*(counter//8))+counter%8].image.source = os.path.dirname(__file__) + "\\data\\img\\empty.png"
+                    counter += 1
+            else:
+                board[(56-8*(counter//8))+counter%8].image.source = pieces_fen[l].imgPath.format(gl.user_piece_set)
+                counter += 1
+        Backend.update_pieces_layout()
+        Backend.update_bitboards(white_move == 'w')
+        white_king_index = int(math.log2(white_king_bitboard))
+        black_king_index = int(math.log2(black_king_bitboard))
+        check = Backend.check_index_overlap(attacking_bitboard, white_king_index if white_move == 'w' else black_king_index)
+        lm = Backend.get_all_legal_moves(white_to_move)
+        Backend.legal_moves_per_square(lm)
+        return
 
 class Utils():
     def toggle_bit(board:int, i:int) -> int:
