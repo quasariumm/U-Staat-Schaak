@@ -312,12 +312,13 @@ class Frontend():
         global white_to_move, fiftymoverule, white_king_index, black_king_index
         global moves_list, started
         global t_clock, b_clock
+        global check
         with open(os.path.dirname(__file__) + "\\data\\log\\latest.log", 'w') as f:
             f.write('\n'.join(moves_fen))
             f.close()
         movenum = 0; move_list = []; list_items = []; moves_fen = []; moves_posfen = []; selected = None
         white_to_move = True; fiftymoverule = 0; white_king_index = 4; black_king_index = 60; moves_list = []
-        started = False
+        started = False; check = False
         if t_clock and b_clock:
             if t_clock.started:
                 t_clock.toggle()
@@ -962,10 +963,12 @@ class Backend():
             file = (int(square.text)-1)%8
             piecesLayout[row][file]= piece
     
-    def load_fen(fen:str) -> None:
+    def load_fen(fen:str) -> None|str:
         global fiftymoverule, white_to_move
         global white_king_moved, black_king_moved
+        global white_king_index, black_king_index
         global board
+        global check
         pieces_fen = {
             'K': w.King(),
             'N': w.Knight(),
@@ -983,9 +986,11 @@ class Backend():
         counter = 0
         posfen, white_move, castle, _, fiftymovecounter, _ = fen.split(' ', maxsplit=100)
         white_to_move = white_move == 'w'
-        white_king_moved = castle.find('KQ') > -1
-        black_king_moved = castle.find('kq') > -1
+        white_king_moved = not castle.find('KQ') > -1
+        black_king_moved = not castle.find('kq') > -1
         fiftymoverule = int(fiftymovecounter)
+        if posfen.count('K') != 1 or posfen.count('k') != 1:
+            return 'error'
         for el in board:
             el.image.source = ''
         for l in posfen:
@@ -1000,8 +1005,12 @@ class Backend():
                 counter += 1
         Backend.update_pieces_layout()
         Backend.update_bitboards(white_move == 'w')
+        white_king_index = int(math.log2(white_king_bitboard))
+        black_king_index = int(math.log2(black_king_bitboard))
+        check = Backend.check_index_overlap(attacking_bitboard, white_king_index if white_move == 'w' else black_king_index)
         lm = Backend.get_all_legal_moves(white_to_move)
         Backend.legal_moves_per_square(lm)
+        return
 
 class Utils():
     def toggle_bit(board:int, i:int) -> int:

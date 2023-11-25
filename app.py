@@ -8,6 +8,7 @@ from kivymd.uix.boxlayout import MDBoxLayout
 from kivy.uix.popup import Popup
 from kivymd.uix.dropdownitem import MDDropDownItem
 from kivymd.uix.menu import MDDropdownMenu
+from kivymd.uix.label import MDLabel
 from kivy.uix.button import Button
 from kivymd.uix.button import MDFillRoundFlatIconButton
 from kivymd.uix.list import MDList
@@ -228,10 +229,17 @@ class MainMenuOptions(MDBoxLayout):
         logic.time_control = 60*int(self.main.time.min.text)+int(self.main.time.sec.text)
         logic.increment = int(self.main.time.inc.text)
         custom_fen = self.main.custom_fen.text
+        e = None
         if custom_fen != '':
-            logic.Backend.load_fen(custom_fen)
+            e = logic.Backend.load_fen(custom_fen)
         else:
-            logic.Backend.load_fen('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
+            e = logic.Backend.load_fen('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
+        if e:
+            for el in gl.theme_elements['MainScreen'].bl.obl.move_list.children:
+                if type(el) != MDLabel:
+                    gl.theme_elements['MainScreen'].bl.obl.move_list.remove_widget(el)
+            logic.Frontend.reset_game()
+            return
         logic.started = True
         logic.t_clock.toggle()
         logic.b_clock.toggle()
