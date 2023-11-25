@@ -280,8 +280,6 @@ class Frontend():
         global t_clock, b_clock
         Backend.update_pieces_layout()
         Backend.update_bitboards(white_to_move)
-        b_clock.toggle(t=time_control)
-        t_clock.toggle(t=time_control)
         check = Backend.check_index_overlap(attacking_bitboard, white_king_index if white_to_move else black_king_index)
         Frontend.clear_legal_moves_indicators()
         movenum+=1
@@ -305,11 +303,15 @@ class Frontend():
 
         if board_turns and not bot_on:
             gl.theme_elements['ChessBoard'].turn_board()
-
-        if (bot_color == BLACK and white_to_move) or (bot_color == WHITE and not white_to_move):return
-        if not bot_on: return
-        bot_move = True
-        Thread(target=Calculations.minimax, kwargs={'depth': 4, 'alpha':-math.inf, 'beta':math.inf, 'max_player':white_to_move, 'max_color':WHITE, 'check':check, 'begin_d':4}).start()
+        time.sleep(0.2)
+        if ((bot_color == BLACK and not white_to_move) or (bot_color == WHITE and white_to_move) or bot_color == 2) and bot_on:
+            clock = None if bot_color == 2 else b_clock if bot_color == BLACK else t_clock
+            if clock: clock.toggle()
+            bot_move = True
+            Thread(target=Calculations.minimax, kwargs={'depth': 4, 'alpha':-math.inf, 'beta':math.inf, 'max_player':white_to_move, 'max_color':WHITE, 'check':check, 'begin_d':4}).start()
+        else:
+            if (bot_on and bot_color not in [-1,2]) or not bot_on: t_clock.toggle()
+            if (bot_on and bot_color not in [1,2]) or not bot_on: b_clock.toggle()
 
     def reset_game() -> None:
         global movenum, move_list, list_items, moves_fen, moves_posfen, selected
@@ -475,15 +477,20 @@ class Clock():
             timeformat= '{:02d}:{:02d}'.format(mins,secs)
             self.clockWidget.text = timeformat
             time.sleep(0.02)
+        if self.totaltime >= time_control:
+            Frontend.invoke_popup(f'{"Black" if white_to_move else "White"} won on time.')
+            Frontend.reset_game()
+            return
 
     def toggle(self):
+        global time_control, increment
         if not self.started:
             self.starttime = time.time() - self.totaltime
             self.started = True
             Thread(target=self.clock).start()
         else:
             self.started = False
-            self.totaltime += increment
+            self.totaltime -= increment
             self.clockWidget.text = '{:02d}:{:02d}'.format(math.ceil((time_control-self.totaltime+1)/60)-1, math.ceil(time_control-self.totaltime)%60)
         return
 

@@ -241,12 +241,27 @@ class MainMenuOptions(MDBoxLayout):
             logic.Frontend.reset_game()
             return
         logic.started = True
-        logic.t_clock.toggle()
-        logic.b_clock.toggle()
         logic.Frontend.switch_movelist_mainmenu()
+        # Set both clocks to the current time control
+        mins, secs = math.ceil((logic.time_control+1)/60)-1, math.ceil(logic.time_control)%60
+        gl.theme_elements['BottomClock'].text = '{:02d}:{:02d}'.format(mins,secs)
+        gl.theme_elements['TopClock'].text = '{:02d}:{:02d}'.format(mins,secs)
+        # Give bots unlimited time
+        match logic.bot_color:
+            case 1: # White
+                gl.theme_elements['BottomClock'].text = '--:--'
+            case -1: # Black
+                gl.theme_elements['TopClock'].text = '--:--'
+            case 2: # Bot vs bot
+                gl.theme_elements['BottomClock'].text = '--:--'
+                gl.theme_elements['TopClock'].text = '--:--'
         if logic.bot_on and logic.bot_color == 1:
             gl.theme_elements['ChessBoard'].turn_board()
             Thread(target=Calculations.minimax, kwargs={'depth': 4, 'alpha':-math.inf, 'beta':math.inf, 'max_player':logic.white_to_move, 'max_color':1, 'check':logic.check, 'begin_d':4}).start()
+        elif logic.bot_on and logic.bot_color == 2:
+            Thread(target=Calculations.minimax, kwargs={'depth': 4, 'alpha':-math.inf, 'beta':math.inf, 'max_player':logic.white_to_move, 'max_color':1, 'check':logic.check, 'begin_d':4}).start()
+        else:
+            logic.b_clock.toggle()
 
 class ChessApp(MDApp):
     def exit_promotion(*args):
