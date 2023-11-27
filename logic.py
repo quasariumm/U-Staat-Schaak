@@ -203,35 +203,7 @@ class Frontend():
                     return 200
                 movee = moves[moves_otherformat.index(move)]
                 flag = list(legal_moves_flags.keys())[list(legal_moves_flags.values()).index(int(f'{movee:016b}'[12:], 2))]
-                if flag == 'e':
-                    toi = int(dest.text)-1
-                    pci = toi + (-8 if white_to_move else 8) # pci: Pawn Capture Index
-                    board[toi].image.source = check_piece.image.source
-                    check_piece.image.source = os.path.dirname(__file__) + "\\data\\img\\empty.png"
-                    board[pci].image.source = os.path.dirname(__file__) + "\\data\\img\\empty.png"
-                elif flag == 'k':
-                    movement = pieceClass.movement[1][0]
-                    dest = board[8*(row+movement[1])+(file+movement[0])]
-                    dest.image.source = check_piece.image.source
-                    check_piece.image.source = os.path.dirname(__file__) + "\\data\\img\\empty.png"
-                    movement = pieceClass.movement[1][1]
-                    rook = board[8*(row+movement[1])+(file+movement[0])]
-                    board[8*(row)+(file+1)].image.source = rook.image.source
-                    rook.image.source = os.path.dirname(__file__) + "\\data\\img\\empty.png"
-                elif flag == 'q':
-                    movement = pieceClass.movement[0][0]
-                    dest = board[8*(row+movement[1])+(file+movement[0])]
-                    dest.image.source = check_piece.image.source
-                    check_piece.image.source = os.path.dirname(__file__) + "\\data\\img\\empty.png"
-                    movement = pieceClass.movement[0][1]
-                    rook = board[8*(row+movement[1])+(file+movement[0])]
-                    board[8*(row)+(file-1)].image.source = rook.image.source
-                    rook.image.source = os.path.dirname(__file__) + "\\data\\img\\empty.png"
-                else:
-                    dest.image.source = selected.image.source 
-                    selected.image.source = os.path.dirname(__file__) + "\\data\\img\\empty.png"
-                selected.background_color = tempBackground_color
-                selected = None
+                Frontend.doMove(dest, flag, row=row, file=file, pieceClass=pieceClass, check_piece=check_piece)
                 white_to_move = not white_to_move
                 # Check if rook or king has moved
                 if isinstance(pieceClass, w.King):
@@ -330,6 +302,9 @@ class Frontend():
                 t_clock.toggle()
             if b_clock.started:
                 b_clock.toggle()
+        # Reset the clocks to 10:00
+        gl.theme_elements['TopClock'].text = '10:00'
+        gl.theme_elements['BottomClock'].text = '10:00'
         Frontend.switch_movelist_mainmenu()
         Backend.load_fen('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
     
@@ -372,15 +347,48 @@ class Frontend():
         if moves:
             if move in moves_otherformat:
                 movee = moves[moves_otherformat.index(move)]
-                dest.image.source = os.path.dirname(__file__) + f"\\data\\img\\pieces\\Default\\{'w' if white_to_move else 'b'}{promotionType}n.png"
-                selected.image.source = os.path.dirname(__file__) + "\\data\\img\\empty.png"
-                selected.background_color = tempBackground_color
-                selected = None
+                Frontend.doMove(dest, list(legal_moves_flags.keys())[list(legal_moves_flags.values()).index(int(f'{movee:016b}'[12:], 2))])
                 white_to_move = not white_to_move
                 Frontend.move_rest(movee, check_pieceClass)
                 return 200
         else:
             return 404
+    
+    @mainthread
+    def doMove(dest:Button, flag:str, row:int=None, file:int=None, pieceClass=None, check_piece:Button=None) -> None:
+        global selected
+        if flag == 'e':
+            toi = int(dest.text)-1
+            pci = toi + (-8 if white_to_move else 8) # pci: Pawn Capture Index
+            board[toi].image.source = check_piece.image.source
+            check_piece.image.source = os.path.dirname(__file__) + "\\data\\img\\empty.png"
+            board[pci].image.source = os.path.dirname(__file__) + "\\data\\img\\empty.png"
+        elif flag == 'k':
+            movement = pieceClass.movement[1][0]
+            dest = board[8*(row+movement[1])+(file+movement[0])]
+            dest.image.source = check_piece.image.source
+            check_piece.image.source = os.path.dirname(__file__) + "\\data\\img\\empty.png"
+            movement = pieceClass.movement[1][1]
+            rook = board[8*(row+movement[1])+(file+movement[0])]
+            board[8*(row)+(file+1)].image.source = rook.image.source
+            rook.image.source = os.path.dirname(__file__) + "\\data\\img\\empty.png"
+        elif flag == 'q':
+            movement = pieceClass.movement[0][0]
+            dest = board[8*(row+movement[1])+(file+movement[0])]
+            dest.image.source = check_piece.image.source
+            check_piece.image.source = os.path.dirname(__file__) + "\\data\\img\\empty.png"
+            movement = pieceClass.movement[0][1]
+            rook = board[8*(row+movement[1])+(file+movement[0])]
+            board[8*(row)+(file-1)].image.source = rook.image.source
+            rook.image.source = os.path.dirname(__file__) + "\\data\\img\\empty.png"
+        elif len(flag) == 2:
+            dest.image.source = os.path.dirname(__file__) + f"\\data\\img\\pieces\\{gl.user_piece_set}\\{'w' if not white_to_move else 'b'}{promotionType}n.png"
+            selected.image.source = os.path.dirname(__file__) + "\\data\\img\\empty.png"
+        else:
+            dest.image.source = selected.image.source 
+            selected.image.source = os.path.dirname(__file__) + "\\data\\img\\empty.png"
+        selected.background_color = tempBackground_color
+        selected = None
 
     def show_legal_move_indicators(button:Button) -> None:
         global legal_moves_per_square, legal_moves_flags
@@ -429,7 +437,7 @@ class Frontend():
             promote='=B'
         elif flag in ['pn', 'qn']:
             promote='=N'
-        newformat=f"{first}{'x' if (flag in ['c', 'e'] or flag[0] == 'q') else ''}{file_letters[file]}{row+1}{promote}{last}"
+        newformat=f"{first}{'x' if (flag in ['c', 'e'] or (flag[0] == 'q' and len(flag) == 2)) else ''}{file_letters[file]}{row+1}{promote}{last}"
         return newformat
 
     def update_move_list(move:int, pieceClass) -> None:
@@ -680,7 +688,7 @@ class Backend():
             # If the king is in check and it needs to move, the previous if-statement will also
             # result in True, so we only have to check if other pieces can block
             if check or checkk:
-                if flag in ['c', 'e'] or flag[0]=='q':
+                if flag in ['c', 'e'] or (flag[0]=='q' and len(flag) == 2):
                     sname, tname = Backend.make_unmake_move(s_index, t_index, flag, white)
                     lm = Backend.get_all_legal_moves(not white, attsquares=True)
                     if np.where(lm == (white_king_index if white else black_king_index))[0].size == 0:
@@ -688,9 +696,13 @@ class Backend():
                         p_counter += 1
                     Backend.make_unmake_move(s_index, t_index, flag, white, sname=sname, tname=tname)
                     continue
-                if Backend.check_index_overlap(king_attack_bitboard, t_index):
-                    possible_moves[p_counter] = move
-                    p_counter += 1
+                if Backend.check_index_overlap(king_attack_bitboard, t_index) and Backend.check_index_overlap(pin_bitboard, t_index):
+                    sname, tname = Backend.make_unmake_move(s_index, t_index, flag, white)
+                    lm = Backend.get_all_legal_moves(not white, attsquares=True)
+                    if np.where(lm == (white_king_index if white else black_king_index))[0].size == 0:
+                        possible_moves[p_counter] = move
+                        p_counter += 1
+                    Backend.make_unmake_move(s_index, t_index, flag, white, sname=sname, tname=tname)
                     continue
                 else:
                     continue
@@ -728,9 +740,12 @@ class Backend():
         elif not legal_moves_per_square:
             return False, 'stalemate'
         _, ti, flag = Utils.move_to_fi_ti_flag(move)
-        if flag in ['c', 'e', 'qq', 'qr', 'qb', 'qn'] or issubclass(Utils.get_piece_type(ti), (w.Pawn, b.Pawn)):
-            fiftymoverule = 0
-        else:
+        try:
+            if flag in ['c', 'e', 'qq', 'qr', 'qb', 'qn'] or issubclass(Utils.get_piece_type(ti), (w.Pawn, b.Pawn)):
+                fiftymoverule = 0
+            else:
+                fiftymoverule += 1
+        except:
             fiftymoverule += 1
         if fiftymoverule >= 50:
             return False, '50-move rule'
