@@ -47,7 +47,7 @@ app:MDApp = None
 #   _|_|_    |___|_|   _|____|_   (_____)   (______)   (______)
 #  (_____)  (_______) (________) (_______) (________) (________)
 #  /_____\  /_______\ /________\ /_______\ /________\ /________\
-# PiecesLayout format: [a1, a2, ..., h7, h8]
+# PiecesLayout format: [a1, b1, ..., g8, h8]
 piecesLayout = [
     [w.Rook(), w.Knight(), w.Bishop(), w.Queen(), w.King(), w.Bishop(), w.Knight(), w.Rook()],
     [w.Pawn(), w.Pawn(), w.Pawn(), w.Pawn(), w.Pawn(), w.Pawn(), w.Pawn(), w.Pawn()],
