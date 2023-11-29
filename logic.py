@@ -697,7 +697,7 @@ class Backend():
                         p_counter += 1
                     Backend.make_unmake_move(s_index, t_index, flag, white, sname=sname, tname=tname)
                     continue
-                if Backend.check_index_overlap(king_attack_bitboard, t_index) and Backend.check_index_overlap(pin_bitboard, t_index):
+                if Backend.check_index_overlap(king_attack_bitboard, t_index) or Backend.check_index_overlap(pin_bitboard, t_index):
                     sname, tname = Backend.make_unmake_move(s_index, t_index, flag, white)
                     lm = Backend.get_all_legal_moves(not white, attsquares=True)
                     if np.where(lm == (white_king_index if white else black_king_index))[0].size == 0:

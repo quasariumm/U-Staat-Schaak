@@ -139,6 +139,7 @@ class Calculations():
         if depth == 0:
             return None, Calculations.evaluation(max_color)
         moves = logic.Backend.get_all_legal_moves(max_player, last_move=lastmove, checkk=check)
+        logic.Backend.legal_moves_per_square(moves)
         if lastmove:
             _, fi, _ = logic.Utils.move_to_fi_ti_flag(lastmove)
             pieceClass = logic.Utils.get_piece_type(fi)()
@@ -150,7 +151,11 @@ class Calculations():
                 return depth, math.inf * (WHITE if max_player else BLACK)
             if draw != '':
                 return draw, 0
-        best_move = random.choice(moves)
+        try:
+            best_move = random.choice(moves)
+        except:
+            print(logic.Utils.move_to_fi_ti_flag(lastmove))
+            logic.Utils.pretty_print_position()
         if max_player:
             max_eval = -math.inf
             for move in moves:
@@ -220,6 +225,7 @@ class Calculations():
 
         if depth == begin_d:
             # Make the move
+            logic.Backend.legal_moves_per_square(moves)
             fi, ti, flag = logic.Utils.move_to_fi_ti_flag(best_move)
             logic.selected = logic.board[fi]
             logic.tempBackground_color = logic.board[fi].background_color
@@ -232,7 +238,7 @@ class Calculations():
             logic.bot_move = False
             piece_type = logic.Utils.get_piece_type(fi)()
             new_format = logic.Frontend.move_other_format(best_move, piece_type)
-            print(new_format, max_eval)
+            print(new_format, max_eval, logic.bot_line)
         return best_move, max_eval
 
     def calculate_score(piecesTypesList:list):
