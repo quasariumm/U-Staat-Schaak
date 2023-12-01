@@ -15,9 +15,10 @@ for i in range(64):
         set_color(228,217,202)
     fill_rect(pos[0], pos[1], 23, 23)
 
-    draw_rect(pos[0],pos[1],21,21)
+    draw_rect(pos[0],pos[1],23,23)
 set_color(88,100,120)
 fill_rect(0,14,92,184)
 draw_rect(0,14,92,184)
 set_color(255,255,255)
 show_draw() 
+
