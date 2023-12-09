@@ -1,10 +1,7 @@
 from ti_draw import set_color, fill_rect, draw_rect, clear, draw_text
 from ti_image import load_image, show_image
 from ti_system import wait_key #The screen is 318x212
-from math import floor
 
-movenum = 0
-moves_list = []
 lastmovedelta = 0
 lastmovetarget = 0
 white_to_move = True
@@ -14,7 +11,6 @@ select_index = 56
 selected_index = None
 
 legal_moves = []
-legal_moves_no_flag = []
 
 # Fontend
 def fill_square(i):
@@ -26,7 +22,6 @@ def fill_square(i):
         set_color(228,217,202)
     fill_rect(pos[0], pos[1], 21, 21)
     draw_rect(pos[0],pos[1],21,21)
-    return
 
 def set_square_color(i):
     if i == selected_index:
@@ -41,56 +36,57 @@ def set_square_color(i):
 def place_piece(name, i):
     load_image(name)
     show_image(97+21*(i%8), 24+21*(i//8))
-    return
 
 def make_move(move):
     global lastmovetarget, lastmovedelta, white_to_move
-    white = move[1]-move[0] > 0
     piecesLayout[move[1]] = piecesLayout[move[0]]
     piecesLayout[move[0]] = None
     fill_square(move[0])
     fill_square(move[1])
-    place_piece('{}P'.format('W' if white else 'B'), move[1])
+    place_piece('{}P'.format('W' if white_to_move else 'B'), move[1])
     if move[2] == 'e':
-        ep_vanish = move[1] + 8*(1 if white else -1) # The pawn gets sent to another dimension
+        ep_vanish = move[1] + 8*(1 if white_to_move else -1) # The pawn gets sent to another dimension
         piecesLayout[ep_vanish] = None
         fill_square(ep_vanish)
     lastmovedelta = abs(move[1]-move[0])
     lastmovetarget = move[1]
+    if move[1]//8 == (0 if white_to_move else 7):
+        print('{} won!'.format("White" if white_to_move else "Black"))
+        return
     white_to_move = not white_to_move
     get_all_legal_moves(white_to_move)
 
 # Backend
 def get_all_legal_moves(white:bool):
-    # All moves in the following format: [from, to, flag]
-    global legal_moves, legal_moves_no_flag
+    global legal_moves
     legal_moves = []
-    multiplier = 1 if white else -1
+    multiplier = -1 if white else 1
     opponent = "BP" if white else "WP"
     i = 0
     for piece in piecesLayout:
-        if piece is None:
+        if piece is None or piece == opponent:
+            i += 1
             continue
         row, file = index_to_rowfile(i)
-        if movenum > 0:
-            if piecesLayout[i+1] == opponent and file < 7 and lastmovedelta == 16 and lastmovetarget == i+1:
-                legal_moves.append([i+1,i+multiplier,'e'])
-            if piecesLayout[i-1] == opponent and file > 0 and lastmovedelta == 16 and lastmovetarget == i-1:
-                legal_moves.append([i-1,i+multiplier,'e'])
-        if piecesLayout[i+(9 if white else -7)] == opponent and file < 7:
-            legal_moves.append([i+1,i+multiplier,'c'])
-        if piecesLayout[i+(7 if white else -9)] == opponent and file > 0:
-            legal_moves.append([i-1,i+multiplier,'c'])
-        if piecesLayout[i+8*multiplier] is not None:
-            legal_moves.append([i,i+multiplier,'n'])
-            if piecesLayout[i+16*multiplier] is None and row == (0 if white else 7):
-                legal_moves.append([i,i+2*multiplier,'n'])
+        if file > 0:
+            if piecesLayout[i-1] == opponent and lastmovedelta == 16 and lastmovetarget == i-1:
+                legal_moves.append([i,i+8*multiplier-1,'e'])
+            if piecesLayout[i+8*multiplier-1] == opponent:
+                legal_moves.append([i,i+8*multiplier-1,None])
+        if file < 7:
+            if piecesLayout[i+1] == opponent and lastmovedelta == 16 and lastmovetarget == i+1:
+                legal_moves.append([i,i+8*multiplier+1,'e'])
+            if piecesLayout[i+8*multiplier+1] == opponent:
+                legal_moves.append([i,i+8*multiplier+1,None])
+        if piecesLayout[i+8*multiplier] == None:
+            legal_moves.append([i,i+8*multiplier,None])
+            if piecesLayout[i+16*multiplier] == None and row == (7 if white else 0):
+                legal_moves.append([i,i+16*multiplier,None])
         i += 1
-    legal_moves_no_flag = [m[0:2] for m in legal_moves]
 
 # Utils
 def index_to_rowfile(i: int) -> tuple[int, int]:
-    return floor(i/8), i%8
+    return i//8, i%8
 
 get_all_legal_moves(white_to_move)
 
@@ -98,8 +94,6 @@ clear()
 set_color(87,87,87)
 fill_rect(0,0,400,400)
 draw_rect(0,0,400,400)
-set_color(88,100,120)
-fill_rect(2,14,92,184)
 set_color(255,255,255)
 for i in range(64):
     fill_square(i)
@@ -137,8 +131,12 @@ while True:
             else:
                 set_color(228,217,202)
             fill_rect(95+(selected_index%8)*21, 22+(selected_index//8)*21, 21, 21)
-            if [selected_index, select_index] in legal_moves_no_flag:
-                make_move(legal_moves[legal_moves_no_flag.index([selected_index, select_index])])
+            possible_moves = [[selected_index, select_index, None], [selected_index, select_index, 'e']]
+            if legal_moves.count(possible_moves[0]) > 0:
+                make_move(possible_moves[0])
+                selected_index = None
+            elif legal_moves.count(possible_moves[1]) > 0:
+                make_move(possible_moves[1])
                 selected_index = None
             else:
                 place_piece(piecesLayout[selected_index], selected_index)
@@ -151,10 +149,4 @@ while True:
                 set_color(0,0,255)
                 fill_rect(95+(selected_index%8)*21, 22+(selected_index//8)*21, 21, 21)
                 place_piece(piecesLayout[select_index], select_index)
-            
-    set_color(88,100,120)
-    fill_rect(2,14,92,148)
-    set_color(255,255,255)
-    draw_text(4,40,str(key))
-    draw_text(4,120,str(select_index))
 show_draw()
