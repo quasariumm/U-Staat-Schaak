@@ -37,6 +37,11 @@ def place_piece(name, i):
     load_image(name)
     show_image(63+25*(i%8), 10+25*(i//8))
 
+def select_init():
+    set_square_color(select_index)
+    draw_rect(59+(select_index%8)*25, 6+(select_index//8)*25, 25, 25)
+    set_color(0,255,255)
+
 def make_move(move):
     global lastmovetarget, lastmovedelta, white_to_move
     piecesLayout[move[1]] = piecesLayout[move[0]]
@@ -80,8 +85,9 @@ def get_all_legal_moves(white:bool):
                 legal_moves.append([i,i+8*multiplier+1,None])
         if piecesLayout[i+8*multiplier] == None:
             legal_moves.append([i,i+8*multiplier,None])
-            if piecesLayout[i+16*multiplier] == None and row == (7 if white else 0):
-                legal_moves.append([i,i+16*multiplier,None])
+            if row == (7 if white else 0):
+                if piecesLayout[i+16*multiplier] == None:
+                    legal_moves.append([i,i+16*multiplier,None])
         i += 1
 
 # Utils
@@ -106,20 +112,20 @@ set_color(0,255,255)
 draw_rect(59,181,25,25)
 while True:
     key = wait_key()
-    if key > 0 and key <= 4:
-        set_square_color(select_index)
-        draw_rect(59+(select_index%8)*25, 6+(select_index//8)*25, 25, 25)
-        set_color(0,255,255)
     if key == 1 and select_index%8 != 7: # Right arrow
+        select_init()
         draw_rect(59+((select_index+1)%8)*25, 6+((select_index+1)//8)*25, 25, 25)
         select_index = select_index + 1
     elif key == 2 and select_index%8 != 0: # Left arrow
+        select_init()
         draw_rect(59+((select_index-1)%8)*25, 6+((select_index-1)//8)*25, 25, 25)
         select_index = select_index - 1
     elif key == 3 and select_index//8 != 0: # Up arrow
+        select_init()
         draw_rect(59+((select_index-8)%8)*25, 6+((select_index-8)//8)*25, 25, 25)
         select_index = select_index - 8
     elif key == 4 and select_index//8 != 7: # Down arrow
+        select_init()
         draw_rect(59+((select_index+8)%8)*25, 6+((select_index+8)//8)*25, 25, 25)
         select_index = select_index + 8
     elif key == 5: # Enter
@@ -149,4 +155,3 @@ while True:
                 set_color(0,0,255)
                 fill_rect(59+(selected_index%8)*25, 6+(selected_index//8)*25, 25, 25)
                 place_piece(piecesLayout[select_index], select_index)
-show_draw()
