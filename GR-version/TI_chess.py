@@ -14,14 +14,14 @@ legal_moves = []
 
 # Fontend
 def fill_square(i):
-    pos = (95+(i%8)*21, 22+(i//8)*21)
+    pos = (59+(i%8)*25, 6+(i//8)*25)
     row=i//8+1
     if (i%2==0 if row%2==0 else i%2==1):
         set_color(121,92,52)
     else:
         set_color(228,217,202)
-    fill_rect(pos[0], pos[1], 21, 21)
-    draw_rect(pos[0],pos[1],21,21)
+    fill_rect(pos[0], pos[1], 25, 25)
+    draw_rect(pos[0],pos[1],25,25)
 
 def set_square_color(i):
     if i == selected_index:
@@ -35,7 +35,7 @@ def set_square_color(i):
 
 def place_piece(name, i):
     load_image(name)
-    show_image(97+21*(i%8), 24+21*(i//8))
+    show_image(63+25*(i%8), 10+25*(i//8))
 
 def make_move(move):
     global lastmovetarget, lastmovedelta, white_to_move
@@ -103,24 +103,24 @@ for img in piecesLayout:
         place_piece(img, i)
     i += 1
 set_color(0,255,255)
-draw_rect(95,169,21,21)
+draw_rect(59,181,25,25)
 while True:
     key = wait_key()
     if key > 0 and key <= 4:
         set_square_color(select_index)
-        draw_rect(95+(select_index%8)*21, 22+(select_index//8)*21, 21, 21)
+        draw_rect(59+(select_index%8)*25, 6+(select_index//8)*25, 25, 25)
         set_color(0,255,255)
     if key == 1 and select_index%8 != 7: # Right arrow
-        draw_rect(95+((select_index+1)%8)*21, 22+((select_index+1)//8)*21, 21, 21)
+        draw_rect(59+((select_index+1)%8)*25, 6+((select_index+1)//8)*25, 25, 25)
         select_index = select_index + 1
     elif key == 2 and select_index%8 != 0: # Left arrow
-        draw_rect(95+((select_index-1)%8)*21, 22+((select_index-1)//8)*21, 21, 21)
+        draw_rect(59+((select_index-1)%8)*25, 6+((select_index-1)//8)*25, 25, 25)
         select_index = select_index - 1
     elif key == 3 and select_index//8 != 0: # Up arrow
-        draw_rect(95+((select_index-8)%8)*21, 22+((select_index-8)//8)*21, 21, 21)
+        draw_rect(59+((select_index-8)%8)*25, 6+((select_index-8)//8)*25, 25, 25)
         select_index = select_index - 8
     elif key == 4 and select_index//8 != 7: # Down arrow
-        draw_rect(95+((select_index+8)%8)*21, 22+((select_index+8)//8)*21, 21, 21)
+        draw_rect(59+((select_index+8)%8)*25, 6+((select_index+8)//8)*25, 25, 25)
         select_index = select_index + 8
     elif key == 5: # Enter
         # (un)select the current square
@@ -130,7 +130,7 @@ while True:
                 set_color(121,92,52)
             else:
                 set_color(228,217,202)
-            fill_rect(95+(selected_index%8)*21, 22+(selected_index//8)*21, 21, 21)
+            fill_rect(59+(selected_index%8)*25, 6+(selected_index//8)*25, 25, 25)
             possible_moves = [[selected_index, select_index, None], [selected_index, select_index, 'e']]
             if legal_moves.count(possible_moves[0]) > 0:
                 make_move(possible_moves[0])
@@ -141,12 +141,12 @@ while True:
             else:
                 place_piece(piecesLayout[selected_index], selected_index)
                 if select_index != selected_index:
-                    draw_rect(95+(selected_index%8)*21, 22+(selected_index//8)*21, 21, 21)
+                    draw_rect(59+(selected_index%8)*25, 6+(selected_index//8)*25, 25, 25)
                 selected_index = None
         else:
             if piecesLayout[select_index] == ('WP' if white_to_move else 'BP'):
                 selected_index = select_index
                 set_color(0,0,255)
-                fill_rect(95+(selected_index%8)*21, 22+(selected_index//8)*21, 21, 21)
+                fill_rect(59+(selected_index%8)*25, 6+(selected_index//8)*25, 25, 25)
                 place_piece(piecesLayout[select_index], select_index)
 show_draw()
