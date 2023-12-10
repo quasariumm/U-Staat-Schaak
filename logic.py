@@ -304,16 +304,12 @@ class Frontend():
             if b_clock.started:
                 b_clock.toggle()
         # Reset the clocks to 10:00
+        t_clock = Clock(clock=topClock)
+        b_clock = Clock(clock=bottomClock)
         gl.theme_elements['TopClock'].text = '10:00'
         gl.theme_elements['BottomClock'].text = '10:00'
         Frontend.switch_movelist_mainmenu()
         Backend.load_fen('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
-    
-    def test_bot_callback(result:tuple[int,float]):
-        fi, _, _ = Utils.move_to_fi_ti_flag(result[0])
-        piece_type = Utils.get_piece_type(fi)()
-        new_format = Frontend.move_other_format(result[0], piece_type)
-        print(new_format, result[1])
     
     def reset_event():
         global promotionStatus, promotionEvent
@@ -360,7 +356,7 @@ class Frontend():
         global selected
         if flag == 'e':
             toi = int(dest.text)-1
-            pci = toi + (-8 if white_to_move else 8) # pci: Pawn Capture Index
+            pci = toi + (8 if white_to_move else -8) # pci: Pawn Capture Index
             board[toi].image.source = check_piece.image.source
             check_piece.image.source = os.path.dirname(__file__) + "\\data\\img\\empty.png"
             board[pci].image.source = os.path.dirname(__file__) + "\\data\\img\\empty.png"
@@ -410,6 +406,7 @@ class Frontend():
             square.background_down = ''
     
     def move_other_format(move:int, pieceClass) -> str:
+        global promotionType
         file_letters={0:'a', 1:'b', 2:'c', 3:'d', 4:'e', 5:'f', 6:'g', 7:'h'}
         piece_types={w.Rook:'R', w.Knight:'N', w.Bishop:'B',w.Queen:'Q', w.King:'K', w.Pawn:'', b.Rook:'R', b.Knight:'N', b.Bishop:'B', b.Queen:'Q', b.King:'K', b.Pawn:''}
         promote=''
@@ -430,14 +427,8 @@ class Frontend():
             last = '#'
         elif check and not mate:
             last = '+'
-        if flag in ['pq', 'qq']:
-            promote='=Q'
-        elif flag in ['pr', 'qr']:
-            promote='=R'
-        elif flag in ['pb', 'qb']:
-            promote='=B'
-        elif flag in ['pn', 'qn']:
-            promote='=N'
+        if flag[0] in ['p', 'q']:
+            promote=f'={promotionType.upper()}'
         newformat=f"{first}{'x' if (flag in ['c', 'e'] or (flag[0] == 'q' and len(flag) == 2)) else ''}{file_letters[file]}{row+1}{promote}{last}"
         return newformat
 
@@ -832,9 +823,12 @@ class Backend():
     def check_index_overlap(board:int, index:int) -> bool:
         '''
         Checks if the given index is 1 in the given bitboard.
-        It shifts the board over by the index and performs a bitwise AND operation on the result and 1
+        It shifts the board over by the index and performs a bitwise AND operation on the result and 1. If the function gives an error (a.k.a. out of bounds) it returns False.
         '''
-        return board >> index & 1 == 1
+        try:
+            return board >> index & 1 == 1
+        except:
+            return False
 
     def move_to_int(row:int, file:int, rto:int, fto:int, flag:int, attsquare:bool) -> int:
         if attsquare:

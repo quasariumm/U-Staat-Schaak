@@ -238,7 +238,7 @@ class Calculations():
             logic.bot_move = False
             piece_type = logic.Utils.get_piece_type(fi)()
             new_format = logic.Frontend.move_other_format(best_move, piece_type)
-            print(new_format, max_eval, logic.bot_line)
+            print(new_format, max_eval)
         return best_move, max_eval
 
     def calculate_score(piecesTypesList:list):
