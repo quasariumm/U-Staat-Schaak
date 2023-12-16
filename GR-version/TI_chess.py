@@ -5,7 +5,7 @@ from ti_system import wait_key #The screen is 318x212
 lastmovedelta = 0
 lastmovetarget = 0
 white_to_move = True
-piecesLayout = ["BP", "BP", "BP", "BP", "BP", "BP", "BP", "BP", None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,None, None, None, None, None, None, None, None,None, None, None, None, None, None, None, None,None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, "WP", "WP", "WP", "WP", "WP", "WP", "WP", "WP"]
+piecesLayout = [None, None, None, None, None, None, None, None, "BP", "BP", "BP", "BP", "BP", "BP", "BP", "BP", None, None, None, None, None, None, None, None,None, None, None, None, None, None, None, None,None, None, None, None, None, None, None, None,None, None, None, None, None, None, None, None, "WP", "WP", "WP", "WP", "WP", "WP", "WP", "WP", None, None, None, None, None, None, None, None]
 
 select_index = 56
 selected_index = None
@@ -85,7 +85,7 @@ def get_all_legal_moves(white:bool):
                 legal_moves.append([i,i+8*multiplier+1,None])
         if piecesLayout[i+8*multiplier] == None:
             legal_moves.append([i,i+8*multiplier,None])
-            if row == (7 if white else 0):
+            if row == (6 if white else 1):
                 if piecesLayout[i+16*multiplier] == None:
                     legal_moves.append([i,i+16*multiplier,None])
         i += 1
