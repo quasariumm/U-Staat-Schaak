@@ -1,9 +1,7 @@
 import math,os,time
 import numpy as np
-from collections import Counter
 from copy import deepcopy
 from threading import Thread, Event
-import multiprocessing as mp
 
 from kivy.utils import get_color_from_hex
 from kivy.uix.button import Button
@@ -14,7 +12,7 @@ from kivymd.uix.label import MDLabel
 from kivymd.uix.scrollview import MDScrollView
 from kivy.clock import mainthread
 
-from app import board, piecesLayout, ChessPromotionUI, app, MainMenuOptions, MovesList
+from app import board, piecesLayout, ChessPromotionUI, MainMenuOptions, MovesList
 from app import time_control, increment
 from pieces import White as w
 from pieces import Black as b
@@ -259,11 +257,11 @@ class Frontend():
         moves_list.append(move)
         lm = Backend.get_all_legal_moves(white_to_move)
         Backend.legal_moves_per_square(lm)
-        # NOTE: The draw local variable gives the type of draw (Stalemate, 50-move rule, threefold repitition)
-        mate, draw = Backend.mate_and_draw(move)
         fen = Utils.position_to_fen()[0]
         moves_fen.append(fen)
         moves_posfen.append(fen.split(' ', maxsplit=1)[0])
+        # NOTE: The draw local variable gives the type of draw (Stalemate, 50-move rule, threefold repitition)
+        mate, draw = Backend.mate_and_draw(move)
         if mate:
             Frontend.invoke_popup(f"{'Black' if white_to_move else 'White'} won by checkmate")
             Frontend.reset_game()
@@ -990,6 +988,7 @@ class Backend():
         global white_king_index, black_king_index
         global board
         global check
+        global moves_fen, moves_posfen
         pieces_fen = {
             'K': w.King(),
             'N': w.Knight(),
@@ -1031,6 +1030,8 @@ class Backend():
         check = Backend.check_index_overlap(attacking_bitboard, white_king_index if white_move == 'w' else black_king_index)
         lm = Backend.get_all_legal_moves(white_to_move)
         Backend.legal_moves_per_square(lm)
+        moves_fen.append(fen)
+        moves_posfen.append(posfen)
         return
 
 class Utils():
