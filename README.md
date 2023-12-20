@@ -23,7 +23,7 @@ To quit the program, you can press the `On` button on the calculator to terminat
 Make sure you have Python installed on your system. We tested our app with Python 3.11.6.  
 When running the following commands, have your terminal in the same directory as where you cloned this repository.  
 To install the required packages, run `py -m pip install -r ./requirements.txt`.  
-To build the file, make sure you have `pyinstaller` installed and run `pyinstaller ./src/app.py -F -w -n ChessPWS --add-data ./src/themes.json:. --add-data ./src/app.kv:. --add-data ./data/:data`  
+To build the file, make sure you have `pyinstaller` installed and run `pyinstaller ./src/app.py -F -w -n ChessPWS --add-data ./src/themes.json:. --add-data ./src/app.kv:. --add-data ./data/:.`  
 All theme data is stored in `C:\Users\<user>\AppData\Local\Quasar\ChessPWS\themes.json` on Windows, `/home/<user>/.local/share/ChessPWS` on Unix/Linux or `/Users/<user>/Library/Application Support/ChessPWS` on MacOS.
 
 ### TI-84 CE Python Edition
