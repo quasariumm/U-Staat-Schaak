@@ -1,3 +1,5 @@
+import sys, appdirs, shutil
+
 from kivymd.app import MDApp
 from kivy.config import Config
 from kivy.lang.builder import Builder
@@ -29,6 +31,16 @@ import global_vars as gl
 from bot import Calculations
 
 Config.set('input', 'mouse', 'mouse,disable_multitouch')
+
+if getattr(sys, 'frozen', False):
+    gl.data_path = os.path.dirname(__file__)
+    user_data_dir = appdirs.user_data_dir(appname='ChessPWS', appauthor='Quasar')
+    if not os.path.exists(user_data_dir):
+        os.makedirs(user_data_dir)
+        shutil.copyfile(os.path.join(os.path.dirname(__file__), 'themes.json'), os.path.join(user_data_dir, 'themes.json'))
+else:
+    gl.data_path = os.path.join(os.path.dirname(__file__), '..', 'data')
+    user_data_dir = None
 
 board = [None] * 64
 time_control = 600
@@ -87,7 +99,7 @@ class ChessBoard(MDGridLayout):
                 if piece:
                     board[8*i+j].image.source = piece.imgPath.format(gl.user_piece_set)
                 else:
-                    board[8*i+j].image.source = os.path.join(os.path.dirname(__file__),  '..', 'data', 'img', 'empty.png')
+                    board[8*i+j].image.source = os.path.join(gl.data_path, 'img', 'empty.png')
     
     def turn_board(self) -> None:
         self.orientation = 'rl-tb' if self.orientation == 'lr-bt' else 'lr-bt'
@@ -108,11 +120,11 @@ class ChessPromotionUI(GridLayout):
         if issubclass(type(pieceType), (w.Pawn, w.King, w.Knight, w.Bishop, w.Rook, w.Queen)):
             for el in self.children:
                 if isinstance(el, Button):
-                    el.image.source = os.path.join(os.path.dirname(__file__),  '..', 'data', 'img', 'pieces', f'{gl.user_piece_set}', f'w{el.text}n.png')
+                    el.image.source = os.path.join(gl.data_path, 'img', 'pieces', f'{gl.user_piece_set}', f'w{el.text}n.png')
         else:
             for el in self.children:
                 if isinstance(el, Button):
-                    el.image.source = os.path.join(os.path.dirname(__file__),  '..', 'data', 'img', 'pieces', f'{gl.user_piece_set}', f'b{el.text}n.png')
+                    el.image.source = os.path.join(gl.data_path, 'img', 'pieces', f'{gl.user_piece_set}', f'b{el.text}n.png')
     
     def cancel(*args):
         logic.promotionStatus = 2
@@ -278,7 +290,6 @@ class ChessApp(MDApp):
         logic.b_clock = logic.Clock(clock=logic.bottomClock)
     
     def top_bar_callback(self, option):
-        print(option)
         if option == 'settings' and gl.settings_menu:
             gl.settings_menu.parent.dismiss()
         elif option == 'settings' and not gl.settings_menu:
@@ -310,7 +321,7 @@ class ChessApp(MDApp):
         return super().on_start()
 
     def build(self):
-        with open(os.path.dirname(__file__) + '\\themes.json', 'r') as f:
+        with open(os.path.join(os.path.dirname(__file__), 'themes.json') if not user_data_dir else os.path.join(user_data_dir, 'themes.json'), 'r') as f:
             ctx = json.load(f)
             f.close()
         gl.themes = deepcopy(ctx)
@@ -319,7 +330,7 @@ class ChessApp(MDApp):
         self.theme_cls.theme_style = 'Dark'
         self.theme_cls.material_style = 'M2'
         Window.bind(on_request_close=self.exit_promotion)
-        return Builder.load_file(os.path.dirname(__file__) + '\\app.kv')
+        return Builder.load_file(os.path.join(os.path.dirname(__file__), 'app.kv'))
 
 def update_theming():
     if gl.themes['user_save']['color_theme'].find('Light') > -1:
@@ -354,7 +365,7 @@ def update_theming():
 
 def update_theme_user_save(theme_name:str = None, piece_set:str = None) -> None:
     gl.themes['user_save'] = {'color_theme':theme_name, 'piece_set':piece_set}
-    with open(os.path.dirname(__file__) + '\\themes.json', 'w') as f:
+    with open(os.path.join(os.path.dirname(__file__), 'themes.json') if not user_data_dir else os.path.join(user_data_dir, 'themes.json'), 'w') as f:
         f.write(json.dumps(gl.themes, indent=4))
 
 if __name__ == "__main__":

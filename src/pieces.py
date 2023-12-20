@@ -1,9 +1,10 @@
 import os
+import global_vars as gl
 
 class White():
     class King():
         def __init__(self) -> None:
-            self.imgPath = os.path.join(os.path.dirname(__file__), '..', 'data', 'img', 'pieces', '{}', "wkn.png")
+            self.imgPath = os.path.join(gl.data_path, 'img', 'pieces', '{}', "wkn.png")
             self.value = 0
             self.movement = [
                 [(-2,0), (-4,0)], # Castle Queenside
@@ -23,7 +24,7 @@ class White():
 
     class Queen():
         def __init__(self) -> None:
-            self.imgPath = os.path.join(os.path.dirname(__file__), '..', 'data', 'img', 'pieces', '{}', "wqn.png")
+            self.imgPath = os.path.join(gl.data_path, 'img', 'pieces', '{}', "wqn.png")
             self.value = 9
             self.movement = [
                 [(1,0),(2,0),(3,0),(4,0),(5,0),(6,0),(7,0)],
@@ -41,7 +42,7 @@ class White():
 
     class Bishop():
         def __init__(self) -> None:
-            self.imgPath = os.path.join(os.path.dirname(__file__), '..', 'data', 'img', 'pieces', '{}', "wbn.png")
+            self.imgPath = os.path.join(gl.data_path, 'img', 'pieces', '{}', "wbn.png")
             self.value = 3
             self.movement = [
                 [(1,1),(2,2),(3,3),(4,4),(5,5),(6,6),(7,7)],
@@ -55,7 +56,7 @@ class White():
 
     class Knight():
         def __init__(self) -> None:
-            self.imgPath = os.path.join(os.path.dirname(__file__), '..', 'data', 'img', 'pieces', '{}', "wnn.png")
+            self.imgPath = os.path.join(gl.data_path, 'img', 'pieces', '{}', "wnn.png")
             self.value = 3
             self.movement = [
                 [(-1,2)],
@@ -73,7 +74,7 @@ class White():
 
     class Rook():
         def __init__(self) -> None:
-            self.imgPath = os.path.join(os.path.dirname(__file__), '..', 'data', 'img', 'pieces', '{}', "wrn.png")
+            self.imgPath = os.path.join(gl.data_path, 'img', 'pieces', '{}', "wrn.png")
             self.value = 5
             self.movement = [
                 [(1,0),(2,0),(3,0),(4,0),(5,0),(6,0),(7,0)],
@@ -87,7 +88,7 @@ class White():
     
     class Pawn():
         def __init__(self) -> None:
-            self.imgPath = os.path.join(os.path.dirname(__file__), '..', 'data', 'img', 'pieces', '{}', "wpn.png")
+            self.imgPath = os.path.join(gl.data_path, 'img', 'pieces', '{}', "wpn.png")
             self.value = 1
             self.movement = [
                 [(0,2)], # First move
@@ -102,7 +103,7 @@ class White():
 class Black():
     class King():
         def __init__(self) -> None:
-            self.imgPath = os.path.join(os.path.dirname(__file__), '..', 'data', 'img', 'pieces', '{}', "bkn.png")
+            self.imgPath = os.path.join(gl.data_path, 'img', 'pieces', '{}', "bkn.png")
             self.value = 0
             self.movement = [
                 [(-2,0), (-4,0)], # Castle Queenside
@@ -122,7 +123,7 @@ class Black():
 
     class Queen():
         def __init__(self) -> None:
-            self.imgPath = os.path.join(os.path.dirname(__file__), '..', 'data', 'img', 'pieces', '{}', "bqn.png")
+            self.imgPath = os.path.join(gl.data_path, 'img', 'pieces', '{}', "bqn.png")
             self.value = 9
             self.movement = [
                 [(1,0),(2,0),(3,0),(4,0),(5,0),(6,0),(7,0)],
@@ -140,7 +141,7 @@ class Black():
 
     class Bishop():
         def __init__(self) -> None:
-            self.imgPath = os.path.join(os.path.dirname(__file__), '..', 'data', 'img', 'pieces', '{}', "bbn.png")
+            self.imgPath = os.path.join(gl.data_path, 'img', 'pieces', '{}', "bbn.png")
             self.value = 3
             self.movement = [
                 [(1,1),(2,2),(3,3),(4,4),(5,5),(6,6),(7,7)],
@@ -154,7 +155,7 @@ class Black():
 
     class Knight():
         def __init__(self) -> None:
-            self.imgPath = os.path.join(os.path.dirname(__file__), '..', 'data', 'img', 'pieces', '{}', "bnn.png")
+            self.imgPath = os.path.join(gl.data_path, 'img', 'pieces', '{}', "bnn.png")
             self.value = 3
             self.movement = [
                 [(-1,2)],
@@ -172,7 +173,7 @@ class Black():
 
     class Rook():
         def __init__(self) -> None:
-            self.imgPath = os.path.join(os.path.dirname(__file__), '..', 'data', 'img', 'pieces', '{}', "brn.png")
+            self.imgPath = os.path.join(gl.data_path, 'img', 'pieces', '{}', "brn.png")
             self.value = 5
             self.movement = [
                 [(1,0),(2,0),(3,0),(4,0),(5,0),(6,0),(7,0)],
@@ -186,7 +187,7 @@ class Black():
     
     class Pawn():
         def __init__(self) -> None:
-            self.imgPath = os.path.join(os.path.dirname(__file__), '..', 'data', 'img', 'pieces', '{}', "bpn.png")
+            self.imgPath = os.path.join(gl.data_path, 'img', 'pieces', '{}', "bpn.png")
             self.value = 1
             self.movement = [
                 [(0,-2)], # First move

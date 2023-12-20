@@ -14,6 +14,7 @@ from kivy.clock import mainthread
 
 from app import board, piecesLayout, ChessPromotionUI, MainMenuOptions, MovesList
 from app import time_control, increment
+from global_vars import data_path
 from pieces import White as w
 from pieces import Black as b
 from bot import Calculations, Misc, WHITE, BLACK
@@ -290,7 +291,7 @@ class Frontend():
         global moves_list, started
         global t_clock, b_clock
         global check
-        with open(os.path.join(os.path.dirname(__file__), '..', 'data', 'log', 'latest.log'), 'w') as f:
+        with open(os.path.join(data_path, 'log', 'latest.log'), 'w') as f:
             f.write('\n'.join(moves_fen))
             f.close()
         movenum = 0; move_list = []; list_items = []; moves_fen = []; moves_posfen = []; selected = None
@@ -356,32 +357,32 @@ class Frontend():
             toi = int(dest.text)-1
             pci = toi + (8 if white_to_move else -8) # pci: Pawn Capture Index
             board[toi].image.source = check_piece.image.source
-            check_piece.image.source = os.path.join(os.path.dirname(__file__), '..', 'data', 'img', 'empty.png')
-            board[pci].image.source = os.path.join(os.path.dirname(__file__), '..', 'data', 'img', 'empty.png')
+            check_piece.image.source = os.path.join(data_path, 'img', 'empty.png')
+            board[pci].image.source = os.path.join(data_path, 'img', 'empty.png')
         elif flag == 'k':
             movement = pieceClass.movement[1][0]
             dest = board[8*(row+movement[1])+(file+movement[0])]
             dest.image.source = check_piece.image.source
-            check_piece.image.source = os.path.join(os.path.dirname(__file__), '..', 'data', 'img', 'empty.png')
+            check_piece.image.source = os.path.join(data_path, 'img', 'empty.png')
             movement = pieceClass.movement[1][1]
             rook = board[8*(row+movement[1])+(file+movement[0])]
             board[8*(row)+(file+1)].image.source = rook.image.source
-            rook.image.source = os.path.join(os.path.dirname(__file__), '..', 'data', 'img', 'empty.png')
+            rook.image.source = os.path.join(data_path, 'img', 'empty.png')
         elif flag == 'q':
             movement = pieceClass.movement[0][0]
             dest = board[8*(row+movement[1])+(file+movement[0])]
             dest.image.source = check_piece.image.source
-            check_piece.image.source = os.path.join(os.path.dirname(__file__), '..', 'data', 'img', 'empty.png')
+            check_piece.image.source = os.path.join(data_path, 'img', 'empty.png')
             movement = pieceClass.movement[0][1]
             rook = board[8*(row+movement[1])+(file+movement[0])]
             board[8*(row)+(file-1)].image.source = rook.image.source
-            rook.image.source = os.path.join(os.path.dirname(__file__), '..', 'data', 'img', 'empty.png')
+            rook.image.source = os.path.join(data_path, 'img', 'empty.png')
         elif len(flag) == 2:
-            dest.image.source = os.path.join(os.path.dirname(__file__), '..', 'data', 'img', 'pieces', f'{gl.user_piece_set}', f"{'w' if not white_to_move else 'b'}{promotionType}n.png")
-            selected.image.source = os.path.join(os.path.dirname(__file__), '..', 'data', 'img', 'empty.png')
+            dest.image.source = os.path.join(data_path, 'img', 'pieces', f'{gl.user_piece_set}', f"{'w' if not white_to_move else 'b'}{promotionType}n.png")
+            selected.image.source = os.path.join(data_path, 'img', 'empty.png')
         else:
             dest.image.source = selected.image.source 
-            selected.image.source = os.path.join(os.path.dirname(__file__), '..', 'data', 'img', 'empty.png')
+            selected.image.source = os.path.join(data_path, 'img', 'empty.png')
         selected.background_color = tempBackground_color
         selected = None
 
@@ -394,7 +395,7 @@ class Frontend():
                     movestr = f'{move:016b}'
                     t_index = int(movestr[6:12], 2)
                     flag = 'capture' if list(legal_moves_flags.keys())[list(legal_moves_flags.values()).index(int(movestr[12:], 2))] in ['c', 'e', 'qq' ,'qr', 'qb', 'qn'] else 'normal'
-                    board[t_index].background_normal = os.path.join(os.path.dirname(__file__), '..', 'data', 'img', f'legal_{flag}.png')
+                    board[t_index].background_normal = os.path.join(data_path, 'img', f'legal_{flag}.png')
         except:
             return
 
@@ -1018,7 +1019,7 @@ class Backend():
                 continue
             elif l in ['1', '2', '3', '4', '5', '6', '7', '8']:
                 for i in range(int(l)):
-                    board[(56-8*(counter//8))+counter%8].image.source = os.path.join(os.path.dirname(__file__), '..', 'data', 'img', 'empty.png')
+                    board[(56-8*(counter//8))+counter%8].image.source = os.path.join(data_path, 'img', 'empty.png')
                     counter += 1
             else:
                 board[(56-8*(counter//8))+counter%8].image.source = pieces_fen[l].imgPath.format(gl.user_piece_set)

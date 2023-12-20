@@ -12,3 +12,5 @@ theme_elements = {
 }
 settings_menu:MDBoxLayout = None
 move_list_scrollview = None
+
+data_path = None
