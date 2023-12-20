@@ -87,7 +87,7 @@ class ChessBoard(MDGridLayout):
                 if piece:
                     board[8*i+j].image.source = piece.imgPath.format(gl.user_piece_set)
                 else:
-                    board[8*i+j].image.source = os.path.dirname(__file__) + '\\data\\img\\empty.png'
+                    board[8*i+j].image.source = os.path.join(os.path.dirname(__file__),  '..', 'data', 'img', 'empty.png')
     
     def turn_board(self) -> None:
         self.orientation = 'rl-tb' if self.orientation == 'lr-bt' else 'lr-bt'
@@ -108,11 +108,11 @@ class ChessPromotionUI(GridLayout):
         if issubclass(type(pieceType), (w.Pawn, w.King, w.Knight, w.Bishop, w.Rook, w.Queen)):
             for el in self.children:
                 if isinstance(el, Button):
-                    el.image.source = os.path.dirname(__file__) + f"\\data\\img\\pieces\\{gl.user_piece_set}\\w{el.text}n.png"
+                    el.image.source = os.path.join(os.path.dirname(__file__),  '..', 'data', 'img', 'pieces', f'{gl.user_piece_set}', f'w{el.text}n.png')
         else:
             for el in self.children:
                 if isinstance(el, Button):
-                    el.image.source = os.path.dirname(__file__) + f"\\data\\img\\pieces\\{gl.user_piece_set}\\b{el.text}n.png"
+                    el.image.source = os.path.join(os.path.dirname(__file__),  '..', 'data', 'img', 'pieces', f'{gl.user_piece_set}', f'b{el.text}n.png')
     
     def cancel(*args):
         logic.promotionStatus = 2
