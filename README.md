@@ -4,7 +4,7 @@ We made a chess app in Python with the use of Kivy and KivyMD. This app was made
 
 ## Use
 ### Desktop
-Once you load up the app, either with the .exe file or with `py ./src/app.py`, you are greeted with our main menu. In this menu there are the following items:
+Once you load up the app, either with the .exe file (you may want to minimize the console window) or with `py ./src/app.py`, you are greeted with our main menu. In this menu there are the following items:
 * The top bar with a button to end the game (flag icon) and one to change the global settings (gear icon), such as themes and piece sets.
 * The settings before you start the game.
 * The chess board.
