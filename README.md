@@ -16,6 +16,7 @@ Please note that the experience can vary based on the hardware you run it on. We
 To run the app, open Cesium from the `apps` menu or run arTIfiCE on your TI and run the program TICHESS. Once you load up the app, the chess board will draw.  
 The rules of the game are as follows: your goal is to reach the other side of the board. Once one player has succeeded, they win.  
 Once a game if finished, the program will automatically reset the game 3 seconds after one player has won.  
+Use the arrow keys to move the cursor and press `enter` to select the piece. Then, move your cursor to the square that you want to move to and press `enter` again. Now, a question will appear asking if the move is valid, so if the move can be made. This question is there to use in 'Schiskunde', where the opponent has to validate the player on certain criteria before letting them make a move. To accept, press `y=/f1` and to reject, press `graph/f5` (any other key works too).
 To quit the program, you can press the `clear` button on the calculator to terminate the program.
 
 ## Installation/build instructions
