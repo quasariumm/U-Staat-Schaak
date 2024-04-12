@@ -1,0 +1,23 @@
+{
+  "version": 4,
+  "configurations": [
+    {
+      "name": "linux",
+      "compilerPath": "/home/patrick/Documents/CEdev/bin/ez80-clang",
+      "includePath": [
+        "/home/patrick/Documents/CEdev/include"
+      ],
+     "cStandard": "c17",
+     "cppStandard": "c++17",
+     "intelliSenseMode": "linux-clang-x64" 
+    },
+    {
+      "name": "Windows",
+      "compilerPath": "C:\\Users\\OE104201\\Documents\\CEdev-Windows\\CEdev\\bin\\ex80-clang.exe",
+      "includePath": ["C:\\Users\\OE104201\\Documents\\CEdev-Windows\\CEdev\\include"],
+      "cStandard": "c17",
+      "cppStandard": "c++17",
+      "intelliSenseMode": "gcc-x64"
+    }
+  ]
+}
