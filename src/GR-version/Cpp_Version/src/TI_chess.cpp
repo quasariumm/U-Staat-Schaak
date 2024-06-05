@@ -176,8 +176,6 @@ int main() {
           SQUARE_WIDTH
         );
 
-        placePiece(white_to_move, selectIndex);
-
         int16_t moveType = movePossible(selectedIndex, selectIndex);
 
         if (moveType == NULL_VALUE) {
@@ -191,11 +189,13 @@ int main() {
             );
           }
         } else {
+          placePiece(white_to_move, selectIndex);
           bool correct = askCorrect();
           clearAsk();
           if (!correct) {
-            setRightColor(selectedIndex);
+            setRightColor(selectIndex);
             fillSquare(selectIndex);
+            setRightColor(selectedIndex);
             fillSquare(selectedIndex);
             placePiece(white_to_move, selectedIndex);
 
