@@ -7,9 +7,9 @@
  * @brief The C++ version of TI-chess
  * @version 0.1
  * @date 2024-03-30
- * 
+ *
  * @copyright Copyright (c) 2024
- * 
+ *
  */
 #include <stdint.h>
 #include <graphx.h>
@@ -71,6 +71,7 @@ void makeMove(const int16_t move[3]);
 bool askCorrect();
 void clearAsk();
 void getAllLegalMoves(const bool white);
+void showCurrentPlayer();
 void init();
 
 inline bool checkOverlap(const uint64_t& board, const uint8_t i);
@@ -81,7 +82,7 @@ int main() {
   if (!VARGFX_init()) {
     return 1;
   }
-  
+
   int_Disable();
 
   gfx_Begin();
@@ -92,6 +93,8 @@ int main() {
   gfx_palette[208] = gfx_RGBTo1555(121, 92, 52);
   gfx_palette[209] = gfx_RGBTo1555(228, 217, 202);
   gfx_palette[210] = gfx_RGBTo1555(87, 87, 87);
+  gfx_palette[211] = gfx_RGBTo1555(20, 20, 20);
+  gfx_palette[212] = gfx_RGBTo1555(220, 220, 220);
   gfx_SetTransparentColor(5);
 
   init();
@@ -139,7 +142,7 @@ int main() {
       );
       selectIndex += 8;
     } else if (key == sk_Enter) {
-      
+
       if (DEBUG) {
         gfx_FillRectangle_NoClip(0, 0, GFX_LCD_WIDTH, BOARD_UPPER_LEFT_Y);
         gfx_PrintStringXY(
@@ -173,6 +176,8 @@ int main() {
           SQUARE_WIDTH
         );
 
+        placePiece(white_to_move, selectIndex);
+
         int16_t moveType = movePossible(selectedIndex, selectIndex);
 
         if (moveType == NULL_VALUE) {
@@ -190,9 +195,21 @@ int main() {
           clearAsk();
           if (!correct) {
             setRightColor(selectedIndex);
+            fillSquare(selectIndex);
             fillSquare(selectedIndex);
             placePiece(white_to_move, selectedIndex);
+
+            uint64_t& opponent = (white_to_move) ? blackBitboard : whiteBitboard;
+            if (checkOverlap(opponent, selectIndex)) {
+              placePiece(!white_to_move, selectIndex);
+            }
+
             selectedIndex = NULL_VALUE;
+            white_to_move = !white_to_move;
+            totalBitboard = whiteBitboard | blackBitboard;
+            getAllLegalMoves(white_to_move);
+            selectInit();
+            showCurrentPlayer();
             continue;
           }
           int16_t move[3] = {selectedIndex, selectIndex, moveType};
@@ -304,7 +321,7 @@ void makeMove(const int16_t move[3]) {
   player += (1ull << move[1]);
   if ( checkOverlap(opponent, move[1]) ) opponent -= (1ull << move[1]);
   player -= (1ull << move[0]);
-  
+
   if (DEBUG) printBitboard(player);
 
   setRightColor(move[0]);
@@ -339,6 +356,8 @@ void makeMove(const int16_t move[3]) {
   totalBitboard = whiteBitboard | blackBitboard;
   getAllLegalMoves(white_to_move);
   selectInit();
+
+  showCurrentPlayer();
 }
 
 bool askCorrect() {
@@ -418,6 +437,24 @@ void getAllLegalMoves(const bool white) {
   }
 }
 
+void showCurrentPlayer() {
+  // Shows an indicator that indicates the player that has to move.
+  // I do this for better visibility
+
+  // Make space for the indicator
+  gfx_SetColor(BG_COLOR);
+  gfx_FillRectangle_NoClip(0, 0, BOARD_UPPER_LEFT_X, GFX_LCD_HEIGHT);
+
+  gfx_SetColor( (white_to_move) ? 212 : 211 );
+
+  gfx_FillRectangle_NoClip(
+    (uint24_t)(0.5f * BOARD_UPPER_LEFT_X - 0.25f * SQUARE_WIDTH),
+    BOARD_UPPER_LEFT_Y,
+    (uint24_t)(0.5f * SQUARE_WIDTH),
+    (uint24_t)(8.f * SQUARE_WIDTH)
+  );
+}
+
 void init() {
   whiteBitboard = 0xff00;
   blackBitboard = 0xff000000000000;
@@ -427,7 +464,7 @@ void init() {
   white_to_move = true;
   lastMoveTarget = 0;
   getAllLegalMoves(true);
-  
+
   // Draw the board
   gfx_FillScreen(BG_COLOR);
   for (uint8_t i = 0; i < 64; ++i) {
@@ -447,4 +484,6 @@ void init() {
     SQUARE_WIDTH,
     SQUARE_WIDTH
   );
+
+  showCurrentPlayer();
 }
